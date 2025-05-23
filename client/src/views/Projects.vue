@@ -3,7 +3,7 @@
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-2xl font-bold text-black">Projects</h2>
       <router-link
-        to="/admin/projects/create"
+        :to="{ name: 'createProject', params: { workspaceId } }"
         class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
       >
         + Create Project
@@ -11,13 +11,13 @@
     </div>
 
     <!-- Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <input
         v-model="filters.name"
         placeholder="Filter by project name"
         class="px-3 py-2 rounded border text-black w-full"
       />
-      <select
+      <!-- <select
         v-model="filters.createdBy"
         class="px-3 py-2 rounded border text-black w-full"
       >
@@ -25,7 +25,7 @@
         <option v-for="user in creatorOptions" :key="user" :value="user">
           {{ user }}
         </option>
-      </select>
+      </select> -->
       <input
         v-model="filters.createdFrom"
         type="date"
@@ -43,7 +43,7 @@
       <thead class="bg-gray-200">
         <tr>
           <th class="px-4 py-2">Name</th>
-          <th class="px-4 py-2">Created By</th>
+          <!-- <th class="px-4 py-2">Created By</th> -->
           <th class="px-4 py-2">Created At</th>
           <th class="px-4 py-2">Actions</th>
         </tr>
@@ -55,7 +55,7 @@
           class="border-t hover:bg-gray-100"
         >
           <td class="px-4 py-2 text-center">{{ project.title }}</td>
-          <td class="px-4 py-2 text-center">{{ project.createdBy }}</td>
+          <!-- <td class="px-4 py-2 text-center">{{ project.createdBy }}</td> -->
           <td class="px-4 py-2 text-center">
             {{ formatDate(project.createdAtUtc) }}
           </td>
@@ -91,24 +91,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import api from "@/api/axios";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useToast } from "vue-toastification";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 const toast = useToast();
-
+const route = useRoute();
 const router = useRouter();
-const projects = ref([]);
-const filters = ref({
-  name: "",
-  createdBy: "",
-  createdFrom: "",
-  createdTo: "",
-});
+
+const store = useWorkspaceStore();
+
+var workspaceId = route.params.workspaceId;
 
 const fetchProjects = async () => {
   try {
-    const res = await api.get("/api/projects", {
+    const res = await api.get(`/api/workspaces/${workspaceId}/projects`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     projects.value = res.data;
@@ -116,6 +114,25 @@ const fetchProjects = async () => {
     console.error("Failed to load projects", err);
   }
 };
+
+watch(
+  () => route.params.workspaceId,
+  async (newId, oldId) => {
+    if (newId != oldId) {
+      workspaceId = newId;
+      await fetchProjects();
+    }
+  },
+  { immediate: true }
+);
+
+const projects = ref([]);
+const filters = ref({
+  name: "",
+  createdBy: "",
+  createdFrom: "",
+  createdTo: "",
+});
 
 // distinct creators for filter dropdown
 const creatorOptions = computed(() => {
@@ -128,8 +145,8 @@ const filteredProjects = computed(() => {
     const matchesName = p.title
       .toLowerCase()
       .includes(filters.value.name.toLowerCase());
-    const matchesCreator =
-      !filters.value.createdBy || p.createdBy === filters.value.createdBy;
+    // const matchesCreator =
+    //   !filters.value.createdBy || p.createdBy === filters.value.createdBy;
     const fromOk =
       !filters.value.createdFrom ||
       new Date(p.createdAtUtc) >= new Date(filters.value.createdFrom);
@@ -137,7 +154,8 @@ const filteredProjects = computed(() => {
       !filters.value.createdTo ||
       new Date(p.createdAtUtc) <=
         new Date(filters.value.createdTo + "T23:59:59");
-    return matchesName && matchesCreator && fromOk && toOk;
+    //return matchesName && matchesCreator && fromOk && toOk;
+    return matchesName && fromOk && toOk;
   });
 });
 

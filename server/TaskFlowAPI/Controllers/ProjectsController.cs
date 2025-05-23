@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using TaskFlowAPI.Data;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Interfaces;
@@ -44,34 +43,9 @@ namespace TaskFlowAPI.Controllers
             return Ok(projects);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateProject([FromBody] CreateProjectDto dto)
-        {
-            var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            var project = _mapper.Map<Project>(dto);
-            project.Id = Guid.NewGuid();
-            project.CreatedById = userId;
-            project.CreatedAtUtc = DateTime.UtcNow;
-            
-            _context.Projects.Add(project);
 
-            // Add creator as Admin
-            var projectUser = new ProjectUser
-            {
-                ProjectId = project.Id,
-                UserId = userId,
-                Role = ProjectRole.Admin,
-                CreatedById = userId,
-                CreatedAtUtc = DateTime.UtcNow
-            };
 
-            _context.ProjectUsers.Add(projectUser);
 
-            await _context.SaveChangesAsync();
-            await _context.Entry(project).Reference(p => p.CreatedBy).LoadAsync();
-            var projectDto = _mapper.Map<ProjectDto>(project);
-            return Ok(projectDto);
-        }
 
         [HttpPost("add-admin")]
         public async Task<IActionResult> AddProjectAdmin([FromBody] AddProjectAdminDto dto)
@@ -149,7 +123,7 @@ namespace TaskFlowAPI.Controllers
             return Ok(projectDto);
         }
 
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         public async Task<IActionResult> UpdateProject(Guid id, [FromBody] CreateProjectDto updated)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
@@ -163,8 +137,8 @@ namespace TaskFlowAPI.Controllers
 
             project.Title = updated.Title;
             project.Description = updated.Description;
-            project.CreatedById = userId;
-            project.CreatedAtUtc = DateTime.UtcNow;
+            project.UpdatedById = userId;
+            project.UpdatedAtUtc = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 

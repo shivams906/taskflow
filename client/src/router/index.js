@@ -12,15 +12,20 @@ import MyTasks from '../views/MyTasks.vue'
 import TaskLogs from '../views/MyLogs.vue'
 import TaskDetails from '../views/TaskDetails.vue'
 import { useAuthStore } from '@/stores/authStore'; // adjust the path based on your project
+import CreateWorkspace from '../views/CreateWorkspace.vue'
 
 
 const routes = [
     {path: '/', name: 'home', component: HomeView },
   { path: '/login', component: Login },
   { path: '/register', component: Register },
+  { path: '/workspaces/create', name: 'createWorkspace', component: CreateWorkspace}, 
+  { path: '/workspaces/:workspaceId/projects', name: 'projects', component: Projects },
+  { path: '/workspaces/:workspaceId/projects/create', name: 'createProject', component: CreateProject},
+  { path: '/workspaces/:workspaceId/my-tasks', name: 'myTasks', component: MyTasks},
   { path: '/admin/projects', component: Projects },
   { path: '/admin/projects/create', component: CreateProject },
-  { path: '/admin/projects/:id', component: ProjectDetails },
+  { path: '/admin/projects/:id', name: 'tasks', component: ProjectDetails },
   { path: '/admin/projects/:id/edit', component: EditProject },
   { path: '/admin/projects/:id/create-task', component: CreateTask },
   { path: '/admin/projects/:id/tasks/:taskId', component: TaskDetails },
@@ -43,7 +48,10 @@ router.beforeEach((to, from, next) => {
   const isLoggedIn = auth.isAuthenticated;
 
   if (authRequired && !isLoggedIn) {
-    return next('/login');
+    return next({ 
+      path: '/login',
+      query: { redirect: to.fullPath }
+    });
   }
 
   next();

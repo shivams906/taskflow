@@ -38,13 +38,14 @@
 <script setup>
 import { ref } from "vue";
 import api from "@/api/axios";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 
 const username = ref("");
 const password = ref("");
 const error = ref("");
 
+const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 
@@ -56,7 +57,8 @@ const login = async () => {
     });
 
     auth.login(res.data.token, username.value); // Use actual username if returned
-    router.push("/");
+    const redirectPath = route.query.redirect || "/"; // fallback to homepage or dashboard
+    router.push(redirectPath);
   } catch (err) {
     error.value = "Login failed";
   }

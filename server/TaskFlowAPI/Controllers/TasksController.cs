@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using TaskFlowAPI.Data;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Interfaces;
@@ -51,22 +50,6 @@ namespace TaskFlowAPI.Controllers
             return Ok(tasks);
         }
 
-        // ✅ 2. Get tasks assigned to logged-in user
-        [HttpGet("my")]
-        public async Task<IActionResult> GetMyTasks()
-        {
-            var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-
-            var tasks = await _context.Tasks
-                .Include(t => t.Project)
-                .Where(t => t.AssignedToId == userId)
-                .Select(t => _mapper.Map<TaskDto>(t))
-                .ToListAsync();
-
-            //var dtos = _mapper.Map<List<TaskDto>>(tasks);
-
-            return Ok(tasks);
-        }
 
         [HttpGet("{taskId}")]
         public async Task<IActionResult> GetTaskById(Guid taskId)
@@ -196,9 +179,9 @@ namespace TaskFlowAPI.Controllers
             }
 
             var logs = await logsQuery
-                .Include(l=>l.User)
+                .Include(l => l.User)
                 .OrderByDescending(l => l.StartTime)
-                .Select(l=>_mapper.Map<TimeLogDto>(l))
+                .Select(l => _mapper.Map<TimeLogDto>(l))
                 .ToListAsync();
 
             return Ok(logs);

@@ -1,19 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
-using TaskFlowAPI.Interfaces;
+﻿using TaskFlowAPI.Interfaces;
+using TaskFlowAPI.Models.Enum;
 
 namespace TaskFlowAPI.Models
 {
-    public class Project : IAuditableEntity
+    public class WorkspaceUser : IAuditableEntity
     {
         public Guid Id { get; set; }
-
-        [Required]
-        public string Title { get; set; } = null!;
-
-        public string? Description { get; set; }
         public Guid WorkspaceId { get; set; }
         public Workspace Workspace { get; set; }
-
+        public Guid UserId { get; set; }
+        public User User { get; set; }
         public Guid? CreatedById { get; set; }
         public User? CreatedBy { get; set; }
 
@@ -22,7 +18,6 @@ namespace TaskFlowAPI.Models
         public User? UpdatedBy { get; set; }
         public DateTime? UpdatedAtUtc { get; set; }
 
-        public ICollection<ProjectUser> ProjectUsers { get; set; } = [];
-        public ICollection<TaskItem> Tasks { get; set; } = [];
+        public WorkspaceRole Role { get; set; } = WorkspaceRole.Admin;
     }
 }

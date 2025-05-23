@@ -17,7 +17,10 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       const auth = useAuthStore();
       auth.logout();
-      router.push('/login');
+
+      const currentPath = router.currentRoute.value.fullPath;
+
+      router.push({path: '/login',query: { redirect: currentPath },});
     }
     return Promise.reject(error);
   }

@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Models;
-using TaskFlowAPI.Models.Enums;
 
 namespace TaskFlow.API.Helpers
 {
@@ -9,34 +8,20 @@ namespace TaskFlow.API.Helpers
     {
         public MappingProfile()
         {
-            CreateMap<Project, ProjectDto>()
-              .ForMember(d => d.CreatedBy, o => o.MapFrom(s => s.CreatedBy.Username))
-              .ForMember(d => d.Admins, o => o.MapFrom(s =>
-                   s.ProjectUsers
-                    .Where(pu => pu.Role == ProjectRole.Admin)
-                    .Select(pu => new AdminDto
-                    {
-                        UserId = pu.UserId,
-                        Username = pu.User!.Username
-                    })
-                    .ToList()
-              ));
+            CreateMap<Workspace, WorkspaceDto>();
+            CreateMap<CreateWorkspaceDto, Workspace>();
 
+            CreateMap<Project, ProjectDto>();
 
             CreateMap<CreateProjectDto, Project>();
 
             CreateMap<TaskItem, TaskDto>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.ProjectTitle, opt => opt.MapFrom(src => src.Project.Title))
-                .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy.Username))
-                .ForMember(dest => dest.AssignedToId, opt => opt.MapFrom(src => src.AssignedToId))
-                .ForMember(dest => dest.AssignedTo, opt => opt.MapFrom(src => src.AssignedTo != null ? src.AssignedTo.Username : null));
-
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
             CreateMap<CreateTaskDto, TaskItem>();
 
-            CreateMap<TaskTimeLog, TimeLogDto>()
-                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.User.Username));
+            CreateMap<TaskTimeLog, TimeLogDto>();
 
             CreateMap<CreateTimeLogDto, TaskTimeLog>();
 

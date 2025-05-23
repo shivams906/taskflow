@@ -105,13 +105,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import api from "@/api/axios";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useToast } from "vue-toastification";
-
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 const toast = useToast();
-
+const route = useRoute();
 const router = useRouter();
 const tasks = ref([]);
 const statusOptions = ref([]);
@@ -121,6 +121,20 @@ const taskStatusUpdates = ref({});
 const activeTimers = ref({});
 const timeLogs = ref({});
 const runningTaskId = ref(null);
+
+const store = useWorkspaceStore();
+
+const workspaceId = route.params.workspaceId;
+
+watch(
+  () => route.params.workspaceId,
+  (newId) => {
+    if (newId && newId !== store.currentWorkspaceId) {
+      store.setCurrentWorkspace(newId);
+    }
+  },
+  { immediate: true }
+);
 
 const elapsedTimers = ref({});
 let intervalId = null;
@@ -132,7 +146,7 @@ const authHeader = () => ({
 // Fetch user's assigned tasks
 const fetchTasks = async () => {
   try {
-    const res = await api.get("/api/tasks/my", {
+    const res = await api.get(`/api/workspaces/${workspaceId}/my-tasks`, {
       headers: authHeader(),
     });
     tasks.value = res.data;

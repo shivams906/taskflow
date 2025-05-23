@@ -72,7 +72,7 @@
           <th class="px-4 py-2">Title</th>
           <th class="px-4 py-2">Status</th>
           <th class="px-4 py-2">Assigned To</th>
-          <th class="px-4 py-2">Created By</th>
+          <!-- <th class="px-4 py-2">Created By</th> -->
           <th class="px-4 py-2">Created At</th>
           <th class="px-4 py-2">Actions</th>
         </tr>
@@ -107,9 +107,9 @@
               </option>
             </select>
           </td>
-          <td class="px-4 py-2 text-center">
+          <!-- <td class="px-4 py-2 text-center">
             {{ task.createdBy }}
-          </td>
+          </td> -->
           <td class="px-4 py-2 text-center">
             {{ formatDate(task.createdAtUtc) }}
           </td>

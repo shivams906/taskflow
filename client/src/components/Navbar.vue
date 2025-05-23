@@ -9,14 +9,14 @@
       </router-link>
 
       <!-- Center nav links -->
-      <div v-if="auth.isAuthenticated" class="flex gap-6">
+      <!-- <div v-if="auth.isAuthenticated" class="flex gap-6">
         <router-link to="/admin/projects" class="hover:text-gray-300"
           >Projects</router-link
         >
         <router-link to="/my-tasks" class="hover:text-gray-300"
           >My Tasks</router-link
         >
-      </div>
+      </div> -->
     </div>
 
     <!-- Right: Auth section -->

@@ -3,17 +3,13 @@ using TaskFlowAPI.Interfaces;
 
 namespace TaskFlowAPI.Models
 {
-    public class Project : IAuditableEntity
+    public class Workspace : IAuditableEntity
     {
         public Guid Id { get; set; }
 
         [Required]
-        public string Title { get; set; } = null!;
-
-        public string? Description { get; set; }
-        public Guid WorkspaceId { get; set; }
-        public Workspace Workspace { get; set; }
-
+        public string Name { get; set; } = null!;
+        public string InviteCode { get; set; }
         public Guid? CreatedById { get; set; }
         public User? CreatedBy { get; set; }
 
@@ -21,8 +17,8 @@ namespace TaskFlowAPI.Models
         public Guid? UpdatedById { get; set; }
         public User? UpdatedBy { get; set; }
         public DateTime? UpdatedAtUtc { get; set; }
-
-        public ICollection<ProjectUser> ProjectUsers { get; set; } = [];
-        public ICollection<TaskItem> Tasks { get; set; } = [];
+        public ICollection<WorkspaceUser> WorkspaceUsers { get; set; } = [];
+        public ICollection<Project> Projects { get; set; } = [];
     }
+
 }

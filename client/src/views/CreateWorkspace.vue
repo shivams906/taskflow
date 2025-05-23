@@ -1,25 +1,16 @@
 <template>
   <div class="p-6 max-w-xl mx-auto">
-    <h2 class="text-2xl font-bold text-black mb-4">Create New Project</h2>
+    <h2 class="text-2xl font-bold text-black mb-4">Create New Workspace</h2>
 
-    <form @submit.prevent="createProject" class="space-y-4">
+    <form @submit.prevent="createWorkspace" class="space-y-4">
       <div>
-        <label class="block text-black mb-1">Project Title</label>
+        <label class="block text-black mb-1">Workspace Name</label>
         <input
-          v-model="title"
+          v-model="name"
           type="text"
           class="w-full px-3 py-2 rounded border border-gray-300 text-black"
           required
         />
-      </div>
-
-      <div>
-        <label class="block text-black mb-1">Description (optional)</label>
-        <textarea
-          v-model="description"
-          class="w-full px-3 py-2 rounded border border-gray-300 text-black"
-          rows="3"
-        ></textarea>
       </div>
 
       <div class="flex justify-end space-x-2">
@@ -51,32 +42,19 @@ import { useToast } from "vue-toastification";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 const toast = useToast();
 
-const title = ref("");
-const description = ref("");
+const name = ref("");
 const error = ref("");
 const route = useRoute();
 const router = useRouter();
 
 const store = useWorkspaceStore();
-const workspaceId = route.params.workspaceId;
 
-watch(
-  () => route.params.workspaceId,
-  (newId) => {
-    if (newId && newId !== store.currentWorkspaceId) {
-      store.setCurrentWorkspace(newId);
-    }
-  },
-  { immediate: true }
-);
-
-const createProject = async () => {
+const createWorkspace = async () => {
   try {
     const res = await api.post(
-      `/api/workspaces/${workspaceId}/projects`,
+      `/api/workspaces/`,
       {
-        title: title.value,
-        description: description.value,
+        name: name.value,
       },
       {
         headers: {
@@ -85,11 +63,15 @@ const createProject = async () => {
       }
     );
 
-    const projectId = res.data.id;
-    toast.success("Project created successfully!");
-    router.go(-1); // Go back to the previous page
+    const workspaceId = res.data.id;
+    toast.success("Workspace created successfully!");
+    await store.refreshAndSelectWorkspace(workspaceId); // Refresh the workspace store
+    router.push({
+      name: "projects",
+      params: { workspaceId },
+    });
   } catch (err) {
-    error.value = "Failed to create project";
+    error.value = "Failed to create workspace.";
     console.error(err);
   }
 };

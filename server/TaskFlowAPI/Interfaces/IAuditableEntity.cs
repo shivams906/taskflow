@@ -1,6 +1,4 @@
-﻿using TaskFlowAPI.Models;
-
-namespace TaskFlowAPI.Interfaces
+﻿namespace TaskFlowAPI.Interfaces
 {
     public interface IAuditableEntity
     {
@@ -8,10 +6,8 @@ namespace TaskFlowAPI.Interfaces
 
         DateTime? UpdatedAtUtc { get; set; }
 
-        Guid CreatedById { get; set; }
-        User CreatedBy { get; set; }
+        Guid? CreatedById { get; set; }
         Guid? UpdatedById { get; set; }
-        User? UpdatedBy { get; set; }
     }
 
 }

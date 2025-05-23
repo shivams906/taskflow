@@ -22,8 +22,11 @@ builder.Services.AddScoped<AuditSaveChangesInterceptor>();
 
 //Add Database
 builder.Services.AddDbContext<AppDbContext>((provider, options) =>
-    { var interceptor = provider.GetRequiredService<AuditSaveChangesInterceptor>();
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")).AddInterceptors(interceptor);
+    {
+        var interceptor = provider.GetRequiredService<AuditSaveChangesInterceptor>();
+        //options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
+        options.UseSqlite("Data Source=taskflow.db")
+        .AddInterceptors(interceptor);
     });
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
