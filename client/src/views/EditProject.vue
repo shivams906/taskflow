@@ -52,7 +52,7 @@ const toast = useToast();
 
 const route = useRoute();
 const router = useRouter();
-const projectId = route.params.id;
+const projectId = route.params.projectId;
 
 const title = ref("");
 const description = ref("");

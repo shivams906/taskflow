@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Models;
+using TaskFlowAPI.Models.Enums;
 
 namespace TaskFlow.API.Helpers
 {
@@ -27,7 +28,18 @@ namespace TaskFlow.API.Helpers
 
             CreateMap<User, UserDto>();
 
-            CreateMap<AddProjectAdminDto, ProjectUser>();
+            CreateMap<AddProjectUserDto, ProjectUser>()
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src =>
+                    Enum.Parse<ProjectRole>(src.Role, true)));
+
+
+            CreateMap<WorkspaceUser, WorkspaceUserDto>()
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.User.Username))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()));
+
+            CreateMap<ProjectUser, ProjectUserDto>()
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.User.Username))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()));
 
         }
     }

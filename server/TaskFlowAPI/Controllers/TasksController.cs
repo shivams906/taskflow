@@ -33,7 +33,7 @@ namespace TaskFlowAPI.Controllers
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
 
             var isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == projectId && pu.UserId == userId && pu.Role == ProjectRole.Admin);
+                .AnyAsync(pu => pu.ProjectId == projectId && pu.UserId == userId);
 
             if (!isAdmin)
                 return Forbid("Only admins can view project tasks.");
@@ -62,7 +62,7 @@ namespace TaskFlowAPI.Controllers
                 return NotFound("Task not found.");
             // Check if the user is assigned to the task or an admin
             bool isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && pu.Role == ProjectRole.Admin);
+                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId);
             bool isAssigned = task.AssignedToId == userId;
             if (!isAdmin && !isAssigned)
                 return Forbid("Not authorized to view this task.");
@@ -164,7 +164,7 @@ namespace TaskFlowAPI.Controllers
 
             // Only project admins or assigned user can view logs
             bool isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && pu.Role == ProjectRole.Admin);
+                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId);
             bool isAssigned = task.AssignedToId == userId;
 
             if (!isAdmin && !isAssigned)

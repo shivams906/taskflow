@@ -6,6 +6,7 @@
         <Sidebar />
       </div>
       <main class="main-content">
+        <div v-if="auth.isAuthenticated" class="flex gap-6"><Breadcrumb /></div>
         <router-view />
       </main>
     </div>
@@ -16,6 +17,7 @@
 import Navbar from "./components/Navbar.vue";
 import Sidebar from "./components/Sidebar.vue";
 import { useAuthStore } from "@/stores/authStore";
+import Breadcrumb from "./components/common/Breadcrumb.vue";
 
 const auth = useAuthStore();
 </script>

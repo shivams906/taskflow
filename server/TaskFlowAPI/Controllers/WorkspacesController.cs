@@ -157,7 +157,7 @@ namespace TaskFlowAPI.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok("Joined workspace successfully.");
+            return Ok(_mapper.Map<WorkspaceDto>(workspace));
         }
 
         [HttpGet("{workspaceId}/projects")]
@@ -234,6 +234,17 @@ namespace TaskFlowAPI.Controllers
             //var dtos = _mapper.Map<List<TaskDto>>(tasks);
 
             return Ok(tasks);
+        }
+
+        [HttpGet("{workspaceId}/users")]
+        public async Task<IActionResult> GetWorkspaceUsers(Guid workspaceId)
+        {
+            var users = await _context.WorkspaceUsers
+                .Include(wu => wu.User)
+                .Where(wu => wu.WorkspaceId == workspaceId)
+                .Select(wu => _mapper.Map<WorkspaceUserDto>(wu))
+                .ToListAsync();
+            return Ok(users);
         }
     }
 }

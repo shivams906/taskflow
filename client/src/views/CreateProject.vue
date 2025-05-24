@@ -87,7 +87,10 @@ const createProject = async () => {
 
     const projectId = res.data.id;
     toast.success("Project created successfully!");
-    router.go(-1); // Go back to the previous page
+    router.push({
+      name: "project",
+      params: { workspaceId: workspaceId, projectId: projectId },
+    }); // Go back to the previous page
   } catch (err) {
     error.value = "Failed to create project";
     console.error(err);

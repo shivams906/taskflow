@@ -1,8 +1,8 @@
 ﻿namespace TaskFlowAPI.DTOs
 {
-    public class AddProjectAdminDto
+    public class AddProjectUserDto
     {
-        public Guid ProjectId { get; set; }
         public Guid UserId { get; set; }
+        public string Role { get; set; }
     }
 }

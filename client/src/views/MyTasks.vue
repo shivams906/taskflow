@@ -243,7 +243,7 @@ const endTimer = async (taskId) => {
 
 // View logs page
 const viewLogs = (taskId) => {
-  router.push(`/my-tasks/${taskId}/logs`);
+  router.push({ name: "myLogs", params: { workspaceId, taskId } });
 };
 
 // Computed filtered tasks

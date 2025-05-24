@@ -1,94 +1,160 @@
 <template>
-  <div class="p-6 max-w-4xl mx-auto text-black">
-    <!-- Task Header -->
-    <div class="flex justify-between items-start mb-6">
-      <div>
-        <h2 class="text-3xl font-bold">{{ task.title }}</h2>
-        <p class="text-gray-300">{{ task.description || "No description" }}</p>
-      </div>
-      <div class="flex space-x-2">
-        <router-link
-          :to="`/admin/projects/${projectId}/tasks/${task.id}/edit`"
-          class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
-          >Edit</router-link
-        >
-        <button
-          @click="deleteTask"
-          class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-
-    <h2 class="text-2xl font-bold mb-4">Logs:</h2>
-
-    <!-- Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-      <select
-        v-if="showUserFilter"
-        v-model="filters.userId"
-        class="px-3 py-2 rounded border text-black"
+  <h1 class="text-2xl font-bold mb-4">Task: {{ task.title }}</h1>
+  <div class="flex justify-between items-start mb-6">
+    <p class="text-gray-300 mt-1">
+      {{ task.description || "No description" }}
+    </p>
+    <div class="flex space-x-2">
+      <router-link
+        :to="{ name: 'editTask', params: { workspaceId, projectId, taskId } }"
+        class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
+        >Edit</router-link
       >
-        <option value="">All Users</option>
-        <option v-for="user in users" :key="user.id" :value="user.id">
-          {{ user.username }}
-        </option>
-      </select>
-
-      <input
-        v-model="filters.startDate"
-        type="date"
-        class="px-3 py-2 rounded border text-black"
-      />
-      <input
-        v-model="filters.endDate"
-        type="date"
-        class="px-3 py-2 rounded border text-black"
-      />
-    </div>
-
-    <!-- Logs Table -->
-    <table
-      class="w-full text-left bg-white rounded overflow-hidden shadow text-black"
-    >
-      <thead class="bg-gray-200">
-        <tr>
-          <th class="px-4 py-2">User</th>
-          <th class="px-4 py-2">Start Time</th>
-          <th class="px-4 py-2">End Time</th>
-          <th class="px-4 py-2">Duration (min)</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="log in filteredLogs"
-          :key="log.id"
-          class="border-t hover:bg-gray-100"
-        >
-          <td class="px-4 py-2">{{ log.username }}</td>
-          <td class="px-4 py-2">{{ formatDate(log.startTime) }}</td>
-          <td class="px-4 py-2">{{ formatDate(log.endTime) }}</td>
-          <td class="px-4 py-2">
-            {{ calculateMinutes(log.startTime, log.endTime) }}
-          </td>
-        </tr>
-
-        <tr v-if="filteredLogs.length === 0">
-          <td colspan="4" class="px-4 py-4 text-center text-gray-500">
-            No logs found.
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- Total -->
-    <div class="mt-4 text-right font-semibold text-black">
-      Total Time: {{ totalTime }} minutes
+      <button
+        @click="deleteTask"
+        class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
+      >
+        Delete
+      </button>
     </div>
   </div>
+  <TabGroup>
+    <TabList class="flex space-x-4">
+      <Tab v-slot="{ selected }">
+        <span
+          :class="
+            selected
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-600'
+          "
+        >
+          Discussions
+        </span>
+      </Tab>
+
+      <Tab v-slot="{ selected }">
+        <span
+          :class="
+            selected
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-600'
+          "
+        >
+          Logs
+        </span>
+      </Tab>
+      <Tab v-slot="{ selected }">
+        <span
+          :class="
+            selected
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-600'
+          "
+        >
+          Members
+        </span>
+      </Tab>
+      <Tab v-slot="{ selected }">
+        <span
+          :class="
+            selected
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-600'
+          "
+        >
+          About
+        </span>
+      </Tab>
+      <Tab v-slot="{ selected }">
+        <span
+          :class="
+            selected
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-600'
+          "
+        >
+          History
+        </span>
+      </Tab>
+    </TabList>
+
+    <TabPanels class="mt-4">
+      <TabPanel> </TabPanel>
+      <TabPanel>
+        <div class="p-6 max-w-4xl mx-auto text-black">
+          <!-- Filters -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <select
+              v-if="showUserFilter"
+              v-model="filters.userId"
+              class="px-3 py-2 rounded border text-black"
+            >
+              <option value="">All Users</option>
+              <option v-for="user in users" :key="user.id" :value="user.id">
+                {{ user.username }}
+              </option>
+            </select>
+
+            <input
+              v-model="filters.startDate"
+              type="date"
+              class="px-3 py-2 rounded border text-black"
+            />
+            <input
+              v-model="filters.endDate"
+              type="date"
+              class="px-3 py-2 rounded border text-black"
+            />
+          </div>
+
+          <!-- Logs Table -->
+          <table
+            class="w-full text-left bg-white rounded overflow-hidden shadow text-black"
+          >
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="px-4 py-2">User</th>
+                <th class="px-4 py-2">Start Time</th>
+                <th class="px-4 py-2">End Time</th>
+                <th class="px-4 py-2">Duration (min)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="log in filteredLogs"
+                :key="log.id"
+                class="border-t hover:bg-gray-100"
+              >
+                <td class="px-4 py-2">{{ log.username }}</td>
+                <td class="px-4 py-2">{{ formatDate(log.startTime) }}</td>
+                <td class="px-4 py-2">{{ formatDate(log.endTime) }}</td>
+                <td class="px-4 py-2">
+                  {{ calculateMinutes(log.startTime, log.endTime) }}
+                </td>
+              </tr>
+
+              <tr v-if="filteredLogs.length === 0">
+                <td colspan="4" class="px-4 py-4 text-center text-gray-500">
+                  No logs found.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Total -->
+          <div class="mt-4 text-right font-semibold text-black">
+            Total Time: {{ totalTime }} minutes
+          </div>
+        </div></TabPanel
+      >
+      <TabPanel> </TabPanel>
+      <TabPanel> </TabPanel>
+      <TabPanel> </TabPanel>
+    </TabPanels>
+  </TabGroup>
 </template>
 <script setup>
+import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@headlessui/vue";
 import { ref, computed, onMounted } from "vue";
 import api from "@/api/axios";
 import { useRoute, useRouter } from "vue-router";
@@ -97,7 +163,8 @@ const toast = useToast();
 
 const route = useRoute();
 const router = useRouter();
-const projectId = route.params.id;
+const workspaceId = route.params.workspaceId;
+const projectId = route.params.projectId;
 const taskId = route.params.taskId;
 
 // --- fetch the single task ---

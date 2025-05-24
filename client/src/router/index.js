@@ -13,6 +13,8 @@ import TaskLogs from '../views/MyLogs.vue'
 import TaskDetails from '../views/TaskDetails.vue'
 import { useAuthStore } from '@/stores/authStore'; // adjust the path based on your project
 import CreateWorkspace from '../views/CreateWorkspace.vue'
+import Workspace from '../views/Workspace.vue'
+import JoinWorkspace from '../views/JoinWorkspace.vue'
 
 
 const routes = [
@@ -20,18 +22,16 @@ const routes = [
   { path: '/login', component: Login },
   { path: '/register', component: Register },
   { path: '/workspaces/create', name: 'createWorkspace', component: CreateWorkspace}, 
-  { path: '/workspaces/:workspaceId/projects', name: 'projects', component: Projects },
+  { path: '/workspaces/join', name: 'joinWorkspace', component: JoinWorkspace}, 
+  { path: '/workspaces/:workspaceId', name: 'workspace', component: Workspace},
   { path: '/workspaces/:workspaceId/projects/create', name: 'createProject', component: CreateProject},
+  { path: '/workspaces/:workspaceId/projects/:projectId', name: 'project', component: ProjectDetails },
+  { path: '/workspaces/:workspaceId/projects/:projectId/edit', name: 'editProject', component: EditProject },
+  { path: '/workspaces/:workspaceId/projects/:projectId/tasks/create', name: 'createTask', component: CreateTask },
+  { path: '/workspaces/:workspaceId/projects/:projectId/tasks/:taskId', name: 'task',  component: TaskDetails },
+  { path: '/workspaces/:workspaceId/projects/:projectId/tasks/:taskId/edit', name: 'editTask', component: EditTask },
   { path: '/workspaces/:workspaceId/my-tasks', name: 'myTasks', component: MyTasks},
-  { path: '/admin/projects', component: Projects },
-  { path: '/admin/projects/create', component: CreateProject },
-  { path: '/admin/projects/:id', name: 'tasks', component: ProjectDetails },
-  { path: '/admin/projects/:id/edit', component: EditProject },
-  { path: '/admin/projects/:id/create-task', component: CreateTask },
-  { path: '/admin/projects/:id/tasks/:taskId', component: TaskDetails },
-  { path: '/admin/projects/:id/tasks/:taskId/edit', component: EditTask },
-  {path: '/my-tasks', component: MyTasks },
-  {path: '/my-tasks/:id/logs', component: TaskLogs },
+  {path: '/workspaces/:workspaceId/my-tasks/:taskId/logs', name: 'myLogs', component: TaskLogs },
 ]
 
 const router = createRouter({

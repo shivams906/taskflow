@@ -6,6 +6,7 @@ using TaskFlowAPI.Data;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Interfaces;
 using TaskFlowAPI.Models;
+using TaskFlowAPI.Models.Enum;
 using TaskFlowAPI.Models.Enums;
 
 namespace TaskFlowAPI.Controllers
@@ -43,62 +44,71 @@ namespace TaskFlowAPI.Controllers
             return Ok(projects);
         }
 
-
-
-
-
-        [HttpPost("add-admin")]
-        public async Task<IActionResult> AddProjectAdmin([FromBody] AddProjectAdminDto dto)
+        [HttpPost("{id}/users")]
+        public async Task<IActionResult> AddProjectUser(Guid id, [FromBody] AddProjectUserDto dto)
         {
-            var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
+            var currentUserId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
 
-            // Check if current user is the creator of the project
             var project = await _context.Projects
-                .FirstOrDefaultAsync(p => p.Id == dto.ProjectId && p.CreatedById == userId);
+                .Include(p => p.Workspace)
+                .FirstOrDefaultAsync(p => p.Id == id);
 
             if (project == null)
-                return Forbid("Only the project creator can add admins.");
+                return NotFound("Project not found.");
 
-            // Check if user already added
-            bool alreadyAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == dto.ProjectId && pu.UserId == dto.UserId);
+            // Check if current user is a ProjectAdmin
+            bool isProjectAdmin = await _context.ProjectUsers
+                .AnyAsync(pu => pu.ProjectId == id && pu.UserId == currentUserId && (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
 
-            if (alreadyAdmin)
-                return BadRequest("User is already an admin of this project.");
+            // Check if current user is a Workspace Admin
+            bool isWorkspaceAdmin = await _context.WorkspaceUsers
+                .AnyAsync(wu => wu.WorkspaceId == project.WorkspaceId && wu.UserId == currentUserId && (wu.Role == WorkspaceRole.Admin || wu.Role == WorkspaceRole.Owner));
+
+            if (!(isProjectAdmin || isWorkspaceAdmin))
+                return Forbid("Only a project admin or workspace admin can add members.");
+
+            // Check if user is already in the project
+            bool alreadyAdded = await _context.ProjectUsers
+                .AnyAsync(pu => pu.ProjectId == id && pu.UserId == dto.UserId);
+
+            if (alreadyAdded)
+                return BadRequest("User is already a member of this project.");
 
             var projectUser = _mapper.Map<ProjectUser>(dto);
-            projectUser.CreatedById = userId;
+            projectUser.ProjectId = id;
+            projectUser.CreatedById = currentUserId;
             projectUser.CreatedAtUtc = DateTime.UtcNow;
 
             _context.ProjectUsers.Add(projectUser);
             await _context.SaveChangesAsync();
 
-            return Ok("Admin added successfully.");
+            return Ok("User added to project successfully.");
         }
 
-        [HttpDelete("remove-admin")]
-        public async Task<IActionResult> RemoveAdmin([FromBody] AddProjectAdminDto dto)
-        {
-            var currentUserId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
 
-            // Only creator can remove admin
-            var project = await _context.Projects
-                .FirstOrDefaultAsync(p => p.Id == dto.ProjectId && p.CreatedById == currentUserId);
+        //[HttpDelete("remove-admin")]
+        //public async Task<IActionResult> RemoveAdmin([FromBody] AddProjectAdminDto dto)
+        //{
+        //    var currentUserId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
 
-            if (project == null)
-                return Forbid("Only the project creator can remove admins.");
+        //    // Only creator can remove admin
+        //    var project = await _context.Projects
+        //        .FirstOrDefaultAsync(p => p.Id == dto.ProjectId && p.CreatedById == currentUserId);
 
-            var projectUser = await _context.ProjectUsers
-                .FirstOrDefaultAsync(pu => pu.ProjectId == dto.ProjectId && pu.UserId == dto.UserId && pu.Role == ProjectRole.Admin);
+        //    if (project == null)
+        //        return Forbid("Only the project creator can remove admins.");
 
-            if (projectUser == null)
-                return NotFound("User is not an admin of this project.");
+        //    var projectUser = await _context.ProjectUsers
+        //        .FirstOrDefaultAsync(pu => pu.ProjectId == dto.ProjectId && pu.UserId == dto.UserId && pu.Role == ProjectRole.Admin);
 
-            _context.ProjectUsers.Remove(projectUser);
-            await _context.SaveChangesAsync();
+        //    if (projectUser == null)
+        //        return NotFound("User is not an admin of this project.");
 
-            return Ok("Admin removed.");
-        }
+        //    _context.ProjectUsers.Remove(projectUser);
+        //    await _context.SaveChangesAsync();
+
+        //    return Ok("Admin removed.");
+        //}
 
 
         [HttpGet("{id}")]
@@ -168,6 +178,17 @@ namespace TaskFlowAPI.Controllers
             await _context.SaveChangesAsync();
 
             return Ok("Project deleted.");
+        }
+
+        [HttpGet("{id}/users")]
+        public async Task<IActionResult> GetProjectUsers(Guid id)
+        {
+            var users = await _context.ProjectUsers
+                .Include(pu => pu.User)
+                .Where(pu => pu.ProjectId == id)
+                .Select(pu => _mapper.Map<ProjectUserDto>(pu))
+                .ToListAsync();
+            return Ok(users);
         }
     }
 }

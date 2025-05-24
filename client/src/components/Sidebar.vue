@@ -25,6 +25,12 @@
       >
         + Add Workspace
       </button>
+      <button
+        @click="joinWorkspace"
+        class="mt-2 w-full bg-gray-800 text-gray-300 border border-dashed border-gray-600 text-xs px-3 py-2 rounded hover:bg-gray-700 transition"
+      >
+        + Join Workspace
+      </button>
     </div>
 
     <!-- Navigation Links -->
@@ -32,15 +38,16 @@
       <li>
         <router-link
           :to="{
-            name: 'projects',
+            name: 'workspace',
             params: { workspaceId: selectedWorkspace },
           }"
           exact-active-class="!text-white !font-semibold border-l-4 border-indigo-500 pl-3"
           class="text-gray-400 hover:text-white transition block px-2"
         >
-          Projects
+          Dashboard
         </router-link>
       </li>
+
       <li>
         <router-link
           :to="{
@@ -88,7 +95,7 @@ const selectedWorkspace = computed({
   get: () => store.currentWorkspaceId,
   set: (val) => {
     store.setCurrentWorkspace(val);
-    router.push(`/workspaces/${val}/projects`);
+    router.push(`/workspaces/${val}`);
   },
 });
 
@@ -98,5 +105,8 @@ const changeWorkspace = () =>
 
 const addWorkspace = () => {
   router.push("/workspaces/create");
+};
+const joinWorkspace = () => {
+  router.push("/workspaces/join");
 };
 </script>

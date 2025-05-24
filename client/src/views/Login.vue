@@ -40,7 +40,9 @@ import { ref } from "vue";
 import api from "@/api/axios";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
+const workspaceStore = useWorkspaceStore();
 const username = ref("");
 const password = ref("");
 const error = ref("");
@@ -57,7 +59,16 @@ const login = async () => {
     });
 
     auth.login(res.data.token, username.value); // Use actual username if returned
-    const redirectPath = route.query.redirect || "/"; // fallback to homepage or dashboard
+    var redirectPath = route.query.redirect || "/"; // fallback to homepage or dashboard
+    if (redirectPath == "/") {
+      // If redirecting to homepage, check if user has a workspace
+      await workspaceStore.fetchWorkspaces();
+      if (workspaceStore.currentWorkspaceId) {
+        redirectPath = `/workspaces/${workspaceStore.currentWorkspaceId}`;
+      } else {
+        redirectPath = "/workspaces/create"; // Redirect to workspaces if no current workspace
+      }
+    }
     router.push(redirectPath);
   } catch (err) {
     error.value = "Login failed";

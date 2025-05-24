@@ -68,7 +68,7 @@ import api from "@/api/axios";
 import AddLogModal from "@/components/AddLogModal.vue";
 
 const route = useRoute();
-const taskId = route.params.id;
+const taskId = route.params.taskId;
 const logs = ref([]);
 const filters = ref({ startDate: "", endDate: "" });
 const showAddModal = ref(false);
