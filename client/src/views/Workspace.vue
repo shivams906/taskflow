@@ -91,9 +91,8 @@
           <table class="w-full bg-white rounded shadow text-black">
             <thead class="bg-gray-200">
               <tr>
-                <th class="px-4 py-2">Name</th>
-                <!-- <th class="px-4 py-2">Created By</th> -->
-                <th class="px-4 py-2">Created At</th>
+                <th class="px-4 py-2 w-2/3 text-left">Name</th>
+                <th class="px-4 py-2">Created By</th>
                 <th class="px-4 py-2">Actions</th>
               </tr>
             </thead>
@@ -103,30 +102,70 @@
                 :key="project.id"
                 class="border-t hover:bg-gray-100"
               >
-                <td class="px-4 py-2 text-center">{{ project.title }}</td>
-                <!-- <td class="px-4 py-2 text-center">{{ project.createdBy }}</td> -->
+                <td class="px-4 py-2 text-left">
+                  <button
+                    @click="viewProject(project.id)"
+                    class="hover:underline"
+                  >
+                    {{ project.title }}
+                  </button>
+                </td>
                 <td class="px-4 py-2 text-center">
-                  {{ formatDate(project.createdAtUtc) }}
+                  {{ project.createdByUsername || "N/A" }}
                 </td>
                 <td class="px-4 py-2 space-x-2 text-center">
-                  <button
-                    @click="viewTasks(project.id)"
-                    class="text-sm text-blue-600 hover:underline"
-                  >
-                    View
-                  </button>
-                  <button
-                    @click="editProject(project.id)"
-                    class="text-sm text-green-600 hover:underline"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    @click="deleteProject(project.id)"
-                    class="text-sm text-red-600 hover:underline"
-                  >
-                    Delete
-                  </button>
+                  <Menu as="div" class="relative inline-block text-left">
+                    <div>
+                      <MenuButton
+                        class="inline-flex justify-center w-full p-2 text-sm font-medium text-gray-500 rounded-full hover:bg-gray-200 focus:outline-none"
+                      >
+                        <!-- Three-dot icon -->
+                        <svg
+                          class="w-5 h-5"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"
+                          />
+                        </svg>
+                      </MenuButton>
+                    </div>
+
+                    <MenuItems
+                      class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    >
+                      <div class="py-1">
+                        <MenuItem v-slot="{ active }">
+                          <button
+                            @click="editProject(project.id)"
+                            :class="[
+                              active
+                                ? 'bg-gray-100 text-gray-900'
+                                : 'text-gray-700',
+                              'block w-full text-left px-4 py-2 text-sm',
+                            ]"
+                          >
+                            Edit
+                          </button>
+                        </MenuItem>
+
+                        <MenuItem v-slot="{ active }">
+                          <button
+                            @click="deleteProject(project.id)"
+                            :class="[
+                              active
+                                ? 'bg-gray-100 text-red-600'
+                                : 'text-red-600',
+                              'block w-full text-left px-4 py-2 text-sm',
+                            ]"
+                          >
+                            Delete
+                          </button>
+                        </MenuItem>
+                      </div>
+                    </MenuItems>
+                  </Menu>
                 </td>
               </tr>
               <tr v-if="projects.length === 0">
@@ -199,10 +238,8 @@ import { ref, onMounted, watch, watchEffect } from "vue";
 import { useToast } from "vue-toastification";
 import MemberList from "@/components/common/MemberList.vue";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
-// import DashboardPanel from "@/components/workspace/DashboardPanel.vue";
-// import ProjectList from "@/components/workspace/ProjectList.vue";
-// import MemberList from "@/components/workspace/MemberList.vue";
-// import AboutWorkspace from "@/components/workspace/AboutWorkspace.vue";
+import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
+
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
@@ -220,7 +257,6 @@ const workspace = ref({
   updatedAtUtc: "",
 });
 const projects = ref([]);
-
 const workspaceStore = useWorkspaceStore();
 const members = ref([]);
 
@@ -268,18 +304,15 @@ watch(
       workspaceId = newId;
       await fetchWorkspace();
       await fetchProjects();
+      await fetchWorkspaceMembers();
     }
   },
   { immediate: true }
 );
 
-onMounted(() => {
-  fetchWorkspace();
-  fetchProjects();
-  fetchWorkspaceMembers();
-});
+onMounted(() => {});
 
-const viewTasks = (id) =>
+const viewProject = (id) =>
   router.push({ name: "project", params: { workspaceId, projectId: id } });
 const editProject = (id) =>
   router.push({ name: "editProject", params: { workspaceId, projectId: id } });

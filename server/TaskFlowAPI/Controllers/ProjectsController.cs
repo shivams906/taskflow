@@ -123,7 +123,7 @@ namespace TaskFlowAPI.Controllers
                 .Include(p => p.CreatedBy)
                 .FirstOrDefaultAsync(p =>
                     p.Id == id &&
-                    (p.CreatedById == userId || p.ProjectUsers.Any(pu => pu.UserId == userId && pu.Role == ProjectRole.Admin)));
+                    (p.CreatedById == userId || p.ProjectUsers.Any(pu => pu.UserId == userId)));
 
             if (project == null)
                 return NotFound("Project not found or you do not have access.");

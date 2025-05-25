@@ -78,7 +78,7 @@ namespace TaskFlowAPI.Controllers
 
             // Check admin access
             var isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && pu.Role == ProjectRole.Admin);
+                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
 
             if (!isAdmin)
                 return Forbid("Only project admins can create tasks.");
@@ -106,7 +106,7 @@ namespace TaskFlowAPI.Controllers
                 return NotFound("Task not found.");
 
             bool isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && pu.Role == ProjectRole.Admin);
+                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
 
             bool isAssignedUser = task.AssignedToId == userId;
 
@@ -201,7 +201,7 @@ namespace TaskFlowAPI.Controllers
                 return NotFound("Task not found.");
 
             bool isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && pu.Role == ProjectRole.Admin);
+                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
 
             if (!isAdmin)
                 return Forbid("You don't have permission to update this task.");
@@ -231,7 +231,7 @@ namespace TaskFlowAPI.Controllers
                 return NotFound("Task not found.");
 
             bool isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && pu.Role == ProjectRole.Admin);
+                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
 
             if (!isAdmin)
                 return Forbid("Only project admins can delete tasks.");
@@ -255,7 +255,7 @@ namespace TaskFlowAPI.Controllers
                 return NotFound("Task not found.");
 
             bool isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && pu.Role == ProjectRole.Admin);
+                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
 
             if (!isAdmin)
                 return Forbid("Only project admins can assign tasks.");
@@ -286,7 +286,7 @@ namespace TaskFlowAPI.Controllers
 
             var isCreator = task.Project.CreatedById == userId;
             var isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && pu.Role == ProjectRole.Admin);
+                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId && (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
 
             if (!isCreator && !isAdmin)
                 return Forbid("Only project creator or admins can unassign this task.");

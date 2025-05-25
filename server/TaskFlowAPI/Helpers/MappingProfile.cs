@@ -12,7 +12,9 @@ namespace TaskFlow.API.Helpers
             CreateMap<Workspace, WorkspaceDto>();
             CreateMap<CreateWorkspaceDto, Workspace>();
 
-            CreateMap<Project, ProjectDto>();
+            CreateMap<Project, ProjectDto>()
+                .ForMember(dest => dest.CreatedByUsername, opt => opt.MapFrom(src =>
+                    src.CreatedBy.Username));
 
             CreateMap<CreateProjectDto, Project>();
 
@@ -22,7 +24,8 @@ namespace TaskFlow.API.Helpers
 
             CreateMap<CreateTaskDto, TaskItem>();
 
-            CreateMap<TaskTimeLog, TimeLogDto>();
+            CreateMap<TaskTimeLog, TimeLogDto>()
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.User.Username));
 
             CreateMap<CreateTimeLogDto, TaskTimeLog>();
 

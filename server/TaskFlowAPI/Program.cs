@@ -24,7 +24,7 @@ builder.Services.AddScoped<AuditSaveChangesInterceptor>();
 builder.Services.AddDbContext<AppDbContext>((provider, options) =>
     {
         var interceptor = provider.GetRequiredService<AuditSaveChangesInterceptor>();
-        //options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
+        //options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
         options.UseSqlite("Data Source=taskflow.db")
         .AddInterceptors(interceptor);
     });
@@ -78,6 +78,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
+        DataSeeder.Seed(context, passwordHasher);
+    }
 }
 
 app.UseHttpsRedirection();

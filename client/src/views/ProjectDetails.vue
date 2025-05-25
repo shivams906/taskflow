@@ -162,7 +162,11 @@
                 :key="task.id"
                 class="border-t hover:bg-gray-100"
               >
-                <td class="px-4 py-2 text-center">{{ task.title }}</td>
+                <td class="px-4 py-2 text-center">
+                  <button @click="viewTask(task.id)" class="hover:underline">
+                    {{ task.title }}
+                  </button>
+                </td>
                 <td class="px-4 py-2">
                   <select
                     v-model="taskStatusUpdates[task.id]"
@@ -194,24 +198,58 @@
                 </td>
 
                 <td class="px-4 py-2 space-x-2 text-center">
-                  <button
-                    @click="viewTask(task.id)"
-                    class="text-blue-600 hover:underline text-sm"
-                  >
-                    View
-                  </button>
-                  <button
-                    @click="editTask(task.id)"
-                    class="text-green-600 hover:underline text-sm"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    @click="deleteTask(task.id)"
-                    class="text-red-600 hover:underline text-sm"
-                  >
-                    Delete
-                  </button>
+                  <Menu as="div" class="relative inline-block text-left">
+                    <div>
+                      <MenuButton
+                        class="inline-flex justify-center w-full p-2 text-sm font-medium text-gray-500 rounded-full hover:bg-gray-200 focus:outline-none"
+                      >
+                        <!-- Three-dot icon -->
+                        <svg
+                          class="w-5 h-5"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"
+                          />
+                        </svg>
+                      </MenuButton>
+                    </div>
+
+                    <MenuItems
+                      class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    >
+                      <div class="py-1">
+                        <MenuItem v-slot="{ active }">
+                          <button
+                            @click="editTask(task.id)"
+                            :class="[
+                              active
+                                ? 'bg-gray-100 text-gray-900'
+                                : 'text-gray-700',
+                              'block w-full text-left px-4 py-2 text-sm',
+                            ]"
+                          >
+                            Edit
+                          </button>
+                        </MenuItem>
+
+                        <MenuItem v-slot="{ active }">
+                          <button
+                            @click="deleteTask(task.id)"
+                            :class="[
+                              active
+                                ? 'bg-gray-100 text-red-600'
+                                : 'text-red-600',
+                              'block w-full text-left px-4 py-2 text-sm',
+                            ]"
+                          >
+                            Delete
+                          </button>
+                        </MenuItem>
+                      </div>
+                    </MenuItems>
+                  </Menu>
                 </td>
               </tr>
               <tr v-if="filteredTasks.length === 0">
@@ -264,6 +302,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useToast } from "vue-toastification";
 import MemberList from "@/components/common/MemberList.vue";
 import { useAuthStore } from "@/stores/authStore";
+import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
 const toast = useToast();
 
 const authStore = useAuthStore();

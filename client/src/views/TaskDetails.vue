@@ -81,7 +81,7 @@
     <TabPanels class="mt-4">
       <TabPanel> </TabPanel>
       <TabPanel>
-        <div class="p-6 max-w-4xl mx-auto text-black">
+        <div class="p-6 mx-auto text-black">
           <!-- Filters -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <select

@@ -8,6 +8,7 @@
         public Guid WorkspaceId { get; set; }
         public DateTime CreatedAtUtc { get; set; }
         public Guid CreatedById { get; set; }
+        public string CreatedByUsername { get; set; }
         public Guid UpdatedById { get; set; }
         public DateTime UpdatedAtUtc { get; set; }
     }

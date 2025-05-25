@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 max-w-4xl mx-auto text-black">
+  <div class="p-6 mx-auto text-black">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-bold">Logs</h2>
       <button
