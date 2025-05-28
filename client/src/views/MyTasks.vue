@@ -50,8 +50,22 @@
           :key="task.id"
           class="border-t hover:bg-gray-100"
         >
-          <td class="px-4 py-2 text-center">{{ task.projectTitle }}</td>
-          <td class="px-4 py-2 text-center">{{ task.title }}</td>
+          <td class="px-4 py-2 text-center">
+            <button
+              @click="viewProject(task.projectId)"
+              class="hover:underline"
+            >
+              {{ task.projectTitle }}
+            </button>
+          </td>
+          <td class="px-4 py-2 text-center">
+            <button
+              @click="viewTask(task.id, task.projectId)"
+              class="hover:underline"
+            >
+              {{ task.title }}
+            </button>
+          </td>
           <td class="px-4 py-2 text-center">
             <select
               v-model="taskStatusUpdates[task.id]"
@@ -265,6 +279,10 @@ const formatElapsedTime = (seconds) => {
   const secs = seconds % 60;
   return `${minutes}m ${secs}s`;
 };
+const viewTask = (taskId, projectId) =>
+  router.push({ name: "task", params: { workspaceId, projectId, taskId } });
+const viewProject = (id) =>
+  router.push({ name: "project", params: { workspaceId, projectId: id } });
 onMounted(async () => {
   await fetchTasks();
   await fetchStatusOptions();

@@ -133,7 +133,7 @@
               class="px-3 py-2 rounded border text-black w-full"
             >
               <option value="">All Users</option>
-              <option v-for="u in users" :key="u.id" :value="u.id">
+              <option v-for="u in users" :key="u.userId" :value="u.userId">
                 {{ u.username }}
               </option>
             </select>
@@ -185,7 +185,11 @@
                     class="border rounded px-2 py-1 text-black w-full"
                   >
                     <option :value="null">-- Unassigned --</option>
-                    <option v-for="u in users" :key="u.id" :value="u.id">
+                    <option
+                      v-for="u in users"
+                      :key="u.userId"
+                      :value="u.userId"
+                    >
                       {{ u.username }}
                     </option>
                   </select>
@@ -397,7 +401,7 @@ const fetchProject = async () => {
 };
 
 const fetchUsers = async () => {
-  const res = await api.get("/api/users", {
+  const res = await api.get(`/api/projects/${projectId}/users`, {
     headers: authHeader(),
   });
   users.value = res.data;

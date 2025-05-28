@@ -18,6 +18,43 @@
       </button>
     </div>
   </div>
+  <!-- Task Info Section -->
+  <div class="bg-white p-4 rounded-lg shadow mb-6 text-black">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Status -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1"
+          >Status</label
+        >
+        <select
+          v-model="task.status"
+          @change="updateTaskStatus(task.id)"
+          class="border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option v-for="s in statusOptions" :key="s" :value="s">
+            {{ s }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Assigned To -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1"
+          >Assigned To</label
+        >
+        <select
+          v-model="task.assignedToId"
+          @change="assignTask(task.id)"
+          class="border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option v-for="u in users" :key="u.userId" :value="u.userId">
+            {{ u.username }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
   <TabGroup>
     <TabList class="flex space-x-4">
       <Tab v-slot="{ selected }">
@@ -166,9 +203,24 @@ const router = useRouter();
 const workspaceId = route.params.workspaceId;
 const projectId = route.params.projectId;
 const taskId = route.params.taskId;
+const statusOptions = ref([]);
 
 // --- fetch the single task ---
-const task = ref({ id: taskId, projectId: "", title: "", description: "" });
+const task = ref({
+  id: taskId,
+  projectId: "",
+  title: "",
+  description: "",
+  status: "",
+  assignedToId: "",
+});
+
+const fetchStatusOptions = async () => {
+  const res = await api.get("/api/tasks/statuses", {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+  statusOptions.value = res.data;
+};
 const fetchTask = async () => {
   const res = await api.get(`/api/tasks/${taskId}`, {
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -202,7 +254,7 @@ const fetchLogs = async () => {
 
 const fetchUsers = async () => {
   try {
-    const res = await api.get("/api/users", {
+    const res = await api.get(`/api/projects/${projectId}/users`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     users.value = res.data;
@@ -254,7 +306,37 @@ const deleteTask = async () => {
   router.push(`/admin/projects/${projectId}`);
 };
 
+const updateTaskStatus = async (taskId) => {
+  const newStatus = task.value.status;
+  await api.put(
+    `/api/tasks/${taskId}/status`,
+    { newStatus },
+    { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+  );
+  toast.success("Task status updated successfully!");
+};
+
+const assignTask = async (taskId) => {
+  const userId = task.value.assignedToId;
+  if (userId) {
+    await api.put(
+      `/api/tasks/${taskId}/assign/`,
+      { userId },
+      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+    );
+    toast.success("Task assigned successfully!");
+  } else {
+    await api.put(
+      `/api/tasks/${taskId}/unassign`,
+      {},
+      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+    );
+    toast.success("Task unassigned successfully!");
+  }
+};
+
 onMounted(() => {
+  fetchStatusOptions();
   fetchTask();
   fetchLogs();
   fetchUsers();
