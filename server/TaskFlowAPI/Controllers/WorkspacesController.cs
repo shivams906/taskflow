@@ -1,13 +1,7 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TaskFlowAPI.Data;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Interfaces;
-using TaskFlowAPI.Models;
-using TaskFlowAPI.Models.Enum;
-using TaskFlowAPI.Models.Enums;
 
 namespace TaskFlowAPI.Controllers
 {
@@ -16,164 +10,100 @@ namespace TaskFlowAPI.Controllers
     [Authorize]
     public class WorkspacesController : ControllerBase
     {
-        private readonly AppDbContext _context;
-        private readonly IMapper _mapper;
+        private readonly IWorkspaceService _workspaceService;
         private readonly ICurrentSessionProvider _currentSessionProvider;
 
-        public WorkspacesController(AppDbContext context, IMapper mapper, ICurrentSessionProvider currentSessionProvider)
+        public WorkspacesController(IWorkspaceService workspaceService, ICurrentSessionProvider currentSessionProvider)
         {
-            _context = context;
-            _mapper = mapper;
+            _workspaceService = workspaceService;
             _currentSessionProvider = currentSessionProvider;
         }
 
-        // GET: api/Workspaces
         [HttpGet]
-        public async Task<ActionResult> GetMyWorkspaces()
+        public async Task<IActionResult> GetMyWorkspaces()
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-
-            var workspaces = await _context.Workspaces
-                .Where(w => w.WorkspaceUsers.Any(wu => wu.UserId == userId))
-                .Select(p => _mapper.Map<WorkspaceDto>(p))
-                .ToListAsync();
-
+            var workspaces = await _workspaceService.GetMyWorkspacesAsync(userId);
             return Ok(workspaces);
         }
 
-        // GET: api/Workspaces/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Workspace>> GetWorkspace(Guid id)
+        public async Task<IActionResult> GetById(Guid id)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-
-            var workspace = await _context.Workspaces
-                .FirstOrDefaultAsync(w =>
-                    w.Id == id &&
-                    w.WorkspaceUsers.Any(wu => wu.UserId == userId));
+            var workspace = await _workspaceService.GetWorkspaceByIdAsync(id, userId);
 
             if (workspace == null)
                 return NotFound("Workspace not found or you do not have access.");
 
-            return Ok(_mapper.Map<WorkspaceDto>(workspace));
+            return Ok(workspace);
         }
 
-        // Patch: api/Workspaces/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PatchWorkspace(Guid id, [FromBody] UpdateWorkspaceDto updatedWorkspace)
+        public async Task<IActionResult> UpdatePartial(Guid id, [FromBody] UpdateWorkspaceDto updatedWorkspace)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
 
-            var workspace = await _context.Workspaces
-                .FirstOrDefaultAsync(w => w.Id == id && w.WorkspaceUsers.Any(wu => wu.UserId == userId && (wu.Role == WorkspaceRole.Owner || wu.Role == WorkspaceRole.Admin)));
-            if (workspace == null)
-                return Forbid("Only the workspace owner or admin can update this project.");
-
-            workspace.Name = updatedWorkspace.Name;
-            workspace.UpdatedById = userId;
-            workspace.UpdatedAtUtc = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(_mapper.Map<WorkspaceDto>(workspace));
-        }
-
-        // POST: api/Workspaces
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult> PostWorkspace([FromBody] CreateWorkspaceDto newWorkspace)
-        {
-            var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-
-            var inviteCode = Guid.NewGuid().ToString("N").Substring(0, 8);
-
-            var workspace = _mapper.Map<Workspace>(newWorkspace);
-            workspace.Id = Guid.NewGuid();
-            workspace.InviteCode = inviteCode;
-            workspace.CreatedById = userId;
-            workspace.CreatedAtUtc = DateTime.UtcNow;
-
-            _context.Workspaces.Add(workspace);
-
-            // Add creator as Admin
-            var workspaceUser = new WorkspaceUser
+            try
             {
-                WorkspaceId = workspace.Id,
-                UserId = userId,
-                Role = WorkspaceRole.Owner,
-                CreatedById = userId,
-                CreatedAtUtc = DateTime.UtcNow
-            };
-
-            _context.WorkspaceUsers.Add(workspaceUser);
-
-            await _context.SaveChangesAsync();
-            return CreatedAtAction("GetWorkspace", new { id = workspace.Id }, _mapper.Map<WorkspaceDto>(workspace));
+                var workspace = await _workspaceService.UpdateWorkspaceAsync(id, updatedWorkspace, userId);
+                return Ok(workspace);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
         }
 
-        // DELETE: api/Workspaces/5
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateWorkspaceDto newWorkspace)
+        {
+            var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
+            var workspace = await _workspaceService.CreateWorkspaceAsync(newWorkspace, userId);
+            return CreatedAtAction("GetWorkspace", new { id = workspace.Id }, workspace);
+        }
+
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteWorkspace(Guid id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
 
-            var workspace = await _context.Workspaces
-                .FirstOrDefaultAsync(w => w.Id == id && w.WorkspaceUsers.Any(wu => wu.UserId == userId && wu.Role == WorkspaceRole.Owner));
-
-            if (workspace == null)
-                return Forbid("Only the owner can delete this workspace.");
-
-            _context.Workspaces.Remove(workspace);
-
-            await _context.SaveChangesAsync();
-
-            return Ok("Workspace deleted.");
+            try
+            {
+                await _workspaceService.DeleteWorkspaceAsync(id, userId);
+                return Ok("Workspace deleted.");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
         }
 
         [HttpPost("join")]
-        public async Task<IActionResult> JoinWorkspace([FromBody] JoinWorkspaceDto dto)
+        public async Task<IActionResult> Join([FromBody] JoinWorkspaceDto dto)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
 
-            var workspace = await _context.Workspaces
-                .FirstOrDefaultAsync(w => w.InviteCode == dto.InviteCode);
-
-            if (workspace == null)
-                return NotFound("Invalid invite code");
-
-            var alreadyMember = await _context.WorkspaceUsers
-                .AnyAsync(wu => wu.WorkspaceId == workspace.Id && wu.UserId == userId);
-
-            if (alreadyMember)
-                return BadRequest("Already in this workspace.");
-
-            _context.WorkspaceUsers.Add(new WorkspaceUser
+            try
             {
-                WorkspaceId = workspace.Id,
-                UserId = userId,
-                Role = WorkspaceRole.Member
-            });
-
-            await _context.SaveChangesAsync();
-
-            return Ok(_mapper.Map<WorkspaceDto>(workspace));
+                var workspace = await _workspaceService.JoinWorkspaceAsync(dto.InviteCode, userId);
+                return Ok(workspace);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("{workspaceId}/projects")]
-        public async Task<IActionResult> GetProjectsForWorkspace(Guid workspaceId)
+        public async Task<IActionResult> GetProjects(Guid workspaceId)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-
-            var projects = await _context.Projects
-                .Where(p => (p.CreatedById == userId ||
-                            p.ProjectUsers.Any(pu => pu.UserId == userId)) && p.WorkspaceId == workspaceId)
-                .Include(p => p.ProjectUsers)!
-                    .ThenInclude(pu => pu.User)
-                .Include(p => p.CreatedBy)
-                .Select(p => _mapper.Map<ProjectDto>(p))
-                .ToListAsync();
-
+            var projects = await _workspaceService.GetProjectsForWorkspaceAsync(workspaceId, userId);
             return Ok(projects);
         }
 
@@ -182,68 +112,33 @@ namespace TaskFlowAPI.Controllers
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
 
-            var workspace = await _context.Workspaces.FirstOrDefaultAsync(w => w.Id == workspaceId);
-            if (workspace == null)
+            try
             {
-                return BadRequest("Workspace does not exist");
+                var project = await _workspaceService.CreateProjectAsync(workspaceId, dto, userId);
+                return Ok(project);
             }
-
-            var hasAccess = _context.WorkspaceUsers.FirstOrDefaultAsync(wu => wu.WorkspaceId == workspaceId && wu.UserId == userId && (wu.Role == WorkspaceRole.Owner || wu.Role == WorkspaceRole.Admin));
-            if (hasAccess == null)
+            catch (KeyNotFoundException ex)
             {
-                return Forbid("You do not have access");
+                return BadRequest(ex.Message);
             }
-
-            var project = _mapper.Map<Project>(dto);
-            project.Id = Guid.NewGuid();
-            project.CreatedById = userId;
-            project.CreatedAtUtc = DateTime.UtcNow;
-            project.WorkspaceId = workspaceId;
-
-            _context.Projects.Add(project);
-
-            // Add creator as Admin
-            var projectUser = new ProjectUser
+            catch (UnauthorizedAccessException ex)
             {
-                ProjectId = project.Id,
-                UserId = userId,
-                Role = ProjectRole.Admin,
-                CreatedById = userId,
-                CreatedAtUtc = DateTime.UtcNow
-            };
-
-            _context.ProjectUsers.Add(projectUser);
-
-            await _context.SaveChangesAsync();
-            await _context.Entry(project).Reference(p => p.CreatedBy).LoadAsync();
-            var projectDto = _mapper.Map<ProjectDto>(project);
-            return Ok(projectDto);
+                return Forbid(ex.Message);
+            }
         }
 
         [HttpGet("{workspaceId}/my-tasks")]
         public async Task<IActionResult> GetMyTasks(Guid workspaceId)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-
-            var tasks = await _context.Tasks
-                .Include(t => t.Project)
-                .Where(t => t.AssignedToId == userId && t.Project.WorkspaceId == workspaceId)
-                .Select(t => _mapper.Map<TaskDto>(t))
-                .ToListAsync();
-
-            //var dtos = _mapper.Map<List<TaskDto>>(tasks);
-
+            var tasks = await _workspaceService.GetMyTasksAsync(workspaceId, userId);
             return Ok(tasks);
         }
 
         [HttpGet("{workspaceId}/users")]
         public async Task<IActionResult> GetWorkspaceUsers(Guid workspaceId)
         {
-            var users = await _context.WorkspaceUsers
-                .Include(wu => wu.User)
-                .Where(wu => wu.WorkspaceId == workspaceId)
-                .Select(wu => _mapper.Map<WorkspaceUserDto>(wu))
-                .ToListAsync();
+            var users = await _workspaceService.GetWorkspaceUsersAsync(workspaceId);
             return Ok(users);
         }
     }

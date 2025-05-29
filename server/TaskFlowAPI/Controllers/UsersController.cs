@@ -1,9 +1,6 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TaskFlowAPI.Data;
-using TaskFlowAPI.DTOs;
+using TaskFlowAPI.Interfaces;
 
 namespace TaskFlowAPI.Controllers
 {
@@ -12,31 +9,17 @@ namespace TaskFlowAPI.Controllers
     [Authorize]
     public class UsersController : ControllerBase
     {
-        private readonly AppDbContext _context;
-        private readonly IMapper _mapper;
+        private readonly IUserService _userService;
 
-        public UsersController(AppDbContext context, IMapper mapper)
+        public UsersController(IUserService userService)
         {
-            _context = context;
-            _mapper = mapper;
+            _userService = userService;
         }
 
-        // GET: api/users?search=keyword
         [HttpGet]
         public async Task<IActionResult> GetUsers([FromQuery] string? search)
         {
-            var query = _context.Users.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                query = query.Where(u => u.Username.Contains(search));
-            }
-
-            var users = await query
-                .OrderBy(u => u.Username)
-                .Select(u => _mapper.Map<UserDto>(u))
-                .ToListAsync();
-
+            var users = await _userService.GetUsersAsync(search);
             return Ok(users);
         }
     }
