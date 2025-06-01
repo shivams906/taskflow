@@ -22,12 +22,6 @@ namespace TaskFlowAPI.Services
 
         public async Task<List<TaskDto>> GetTasksForProjectAsync(Guid projectId, Guid userId)
         {
-            var isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == projectId && pu.UserId == userId);
-
-            if (!isAdmin)
-                throw new UnauthorizedAccessException("Only admins can view project tasks.");
-
             var tasks = await _context.Tasks
                 .Include(t => t.AssignedTo)
                 .Include(t => t.CreatedBy)
@@ -40,26 +34,12 @@ namespace TaskFlowAPI.Services
 
         public async Task<TaskDto> GetTaskByIdAsync(Guid taskId, Guid userId)
         {
-            var task = await _context.Tasks.Include(t => t.AssignedTo).FirstOrDefaultAsync(t => t.Id == taskId);
-            if (task == null) throw new Exception("Task not found.");
-
-            var isAdmin = await _context.ProjectUsers.AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId);
-            bool isAssigned = task.AssignedToId == userId;
-
-            if (!isAdmin && !isAssigned) throw new UnauthorizedAccessException("Not authorized to view this task.");
-
+            var task = await _context.Tasks.Include(t => t.AssignedTo).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
             return _mapper.Map<TaskDto>(task);
         }
 
         public async Task<TaskDto> CreateTaskAsync(CreateTaskDto dto, Guid userId)
         {
-            var isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == dto.ProjectId && pu.UserId == userId &&
-                    (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
-
-            if (!isAdmin)
-                throw new UnauthorizedAccessException("Only project admins can create tasks.");
-
             var taskItem = _mapper.Map<TaskItem>(dto);
             taskItem.Id = Guid.NewGuid();
             taskItem.CreatedById = userId;
@@ -73,16 +53,7 @@ namespace TaskFlowAPI.Services
 
         public async Task<string> UpdateTaskStatusAsync(Guid taskId, UpdateTaskStatusDto dto, Guid userId)
         {
-            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId);
-            if (task == null) throw new Exception("Task not found.");
-
-            bool isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId &&
-                    (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
-            bool isAssignedUser = task.AssignedToId == userId;
-
-            if (!isAdmin && !isAssignedUser)
-                throw new UnauthorizedAccessException("Not allowed to update this task.");
+            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
 
             if (!Enum.TryParse<TaskItemStatus>(dto.NewStatus, true, out var statusEnum))
                 throw new ArgumentException("Invalid task status.");
@@ -97,9 +68,7 @@ namespace TaskFlowAPI.Services
 
         public async Task<string> LogTimeAsync(Guid taskId, CreateTimeLogDto dto, Guid userId)
         {
-            var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId);
-            if (task == null || task.AssignedToId != userId)
-                throw new UnauthorizedAccessException("Only the assigned user can log time.");
+            var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
 
             var log = _mapper.Map<TaskTimeLog>(dto);
             log.Id = Guid.NewGuid();
@@ -116,13 +85,7 @@ namespace TaskFlowAPI.Services
 
         public async Task<List<TimeLogDto>> GetTimeLogsAsync(Guid taskId, Guid userId, bool onlyMine)
         {
-            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId);
-            if (task == null) throw new Exception("Task not found.");
-
-            bool isAdmin = await _context.ProjectUsers.AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId);
-            bool isAssigned = task.AssignedToId == userId;
-
-            if (!isAdmin && !isAssigned) throw new UnauthorizedAccessException("Not authorized to view logs for this task.");
+            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
 
             var logsQuery = _context.TaskTimeLogs.Where(t => t.TaskItemId == taskId);
             if (onlyMine) logsQuery = logsQuery.Where(t => t.UserId == userId);
@@ -137,14 +100,7 @@ namespace TaskFlowAPI.Services
 
         public async Task<TaskDto> UpdateTaskAsync(Guid taskId, CreateTaskDto updated, Guid userId)
         {
-            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId);
-            if (task == null) throw new Exception("Task not found.");
-
-            bool isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId &&
-                    (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
-            if (!isAdmin)
-                throw new UnauthorizedAccessException("You don't have permission to update this task.");
+            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
 
             task.Title = updated.Title;
             task.Description = updated.Description;
@@ -158,14 +114,7 @@ namespace TaskFlowAPI.Services
 
         public async Task<string> DeleteTaskAsync(Guid taskId, Guid userId)
         {
-            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId);
-            if (task == null) throw new Exception("Task not found.");
-
-            bool isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId &&
-                    (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
-            if (!isAdmin)
-                throw new UnauthorizedAccessException("Only project admins can delete tasks.");
+            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
 
             _context.Tasks.Remove(task);
             await _context.SaveChangesAsync();
@@ -175,18 +124,9 @@ namespace TaskFlowAPI.Services
 
         public async Task<string> AssignTaskAsync(Guid taskId, AssignUserToTaskDto dto, Guid userId)
         {
-            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId);
-            if (task == null) throw new Exception("Task not found.");
+            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
 
-            bool isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId &&
-                    (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
-            if (!isAdmin)
-                throw new UnauthorizedAccessException("Only project admins can assign tasks.");
-
-            var targetUser = await _context.Users.FindAsync(dto.UserId);
-            if (targetUser == null) throw new Exception("User not found.");
-
+            var targetUser = await _context.Users.FindAsync(dto.UserId) ?? throw new Exception("User not found.");
             task.AssignedToId = dto.UserId;
             task.UpdatedById = userId;
             task.UpdatedAtUtc = DateTime.UtcNow;
@@ -197,15 +137,7 @@ namespace TaskFlowAPI.Services
 
         public async Task<string> UnassignTaskAsync(Guid taskId, Guid userId)
         {
-            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId);
-            if (task == null) throw new Exception("Task not found.");
-
-            var isCreator = task.Project.CreatedById == userId;
-            var isAdmin = await _context.ProjectUsers
-                .AnyAsync(pu => pu.ProjectId == task.ProjectId && pu.UserId == userId &&
-                    (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
-            if (!isCreator && !isAdmin)
-                throw new UnauthorizedAccessException("Only project creator or admins can unassign this task.");
+            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
 
             task.AssignedToId = null;
             task.UpdatedById = userId;

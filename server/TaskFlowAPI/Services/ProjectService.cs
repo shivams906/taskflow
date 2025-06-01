@@ -4,7 +4,6 @@ using TaskFlowAPI.Data;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Interfaces;
 using TaskFlowAPI.Models;
-using TaskFlowAPI.Models.Enum;
 using TaskFlowAPI.Models.Enums;
 
 namespace TaskFlowAPI.Services;
@@ -34,17 +33,7 @@ public class ProjectService : IProjectService
 
     public async Task<bool> AddProjectUserAsync(Guid projectId, AddProjectUserDto dto, Guid currentUserId)
     {
-        var project = await _context.Projects.Include(p => p.Workspace).FirstOrDefaultAsync(p => p.Id == projectId);
-        if (project == null) return false;
-
-        // Check permissions
-        bool isProjectAdmin = await _context.ProjectUsers
-            .AnyAsync(pu => pu.ProjectId == projectId && pu.UserId == currentUserId && (pu.Role == ProjectRole.Admin || pu.Role == ProjectRole.Owner));
-
-        bool isWorkspaceAdmin = await _context.WorkspaceUsers
-            .AnyAsync(wu => wu.WorkspaceId == project.WorkspaceId && wu.UserId == currentUserId && (wu.Role == WorkspaceRole.Admin || wu.Role == WorkspaceRole.Owner));
-
-        if (!(isProjectAdmin || isWorkspaceAdmin)) return false;
+        var project = await _context.Projects.Include(p => p.Workspace).FirstOrDefaultAsync(p => p.Id == projectId) ?? throw new KeyNotFoundException("Project not found");
 
         // Check if user already added
         bool alreadyAdded = await _context.ProjectUsers.AnyAsync(pu => pu.ProjectId == projectId && pu.UserId == dto.UserId);
@@ -63,6 +52,7 @@ public class ProjectService : IProjectService
 
     public async Task<ProjectDto?> GetProjectByIdAsync(Guid projectId, Guid userId)
     {
+
         var project = await _context.Projects
             .Include(p => p.ProjectUsers)!
                 .ThenInclude(pu => pu.User)
@@ -70,18 +60,14 @@ public class ProjectService : IProjectService
             .Include(p => p.CreatedBy)
             .FirstOrDefaultAsync(p =>
                 p.Id == projectId &&
-                (p.CreatedById == userId || p.ProjectUsers.Any(pu => pu.UserId == userId)));
-
+                (p.CreatedById == userId || p.ProjectUsers.Any(pu => pu.UserId == userId))) ?? throw new KeyNotFoundException("Project not found");
         return project == null ? null : _mapper.Map<ProjectDto>(project);
     }
 
     public async Task<ProjectDto?> UpdateProjectAsync(Guid projectId, CreateProjectDto updated, Guid userId)
     {
         var project = await _context.Projects
-            .FirstOrDefaultAsync(p => p.Id == projectId && p.CreatedById == userId);
-
-        if (project == null) return null;
-
+            .FirstOrDefaultAsync(p => p.Id == projectId) ?? throw new KeyNotFoundException("Project not found");
         project.Title = updated.Title;
         project.Description = updated.Description;
         project.UpdatedById = userId;
@@ -97,10 +83,7 @@ public class ProjectService : IProjectService
         var project = await _context.Projects
             .Include(p => p.Tasks)
             .Include(p => p.ProjectUsers)
-            .FirstOrDefaultAsync(p => p.Id == projectId && p.CreatedById == userId);
-
-        if (project == null) return false;
-
+            .FirstOrDefaultAsync(p => p.Id == projectId) ?? throw new KeyNotFoundException("Project not found");
         _context.Tasks.RemoveRange(project.Tasks);
         _context.ProjectUsers.RemoveRange(project.ProjectUsers);
         _context.Projects.Remove(project);
@@ -110,7 +93,7 @@ public class ProjectService : IProjectService
         return true;
     }
 
-    public async Task<List<ProjectUserDto>> GetProjectUsersAsync(Guid projectId)
+    public async Task<List<ProjectUserDto>> GetProjectUsersAsync(Guid projectId, Guid userId)
     {
         var users = await _context.ProjectUsers
             .Include(pu => pu.User)

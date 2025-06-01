@@ -4,8 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using TaskFlowAPI.Data;
+using TaskFlowAPI.Infrastructure.Repositories;
 using TaskFlowAPI.Interceptors;
 using TaskFlowAPI.Interfaces;
+using TaskFlowAPI.Middleware;
 using TaskFlowAPI.Models;
 using TaskFlowAPI.Services;
 using TaskFlowAPI.Settings;
@@ -19,6 +21,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentSessionProvider, CurrentSessionProvider>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
+builder.Services.AddScoped<IRoleAccessService, RoleAccessService>();
 builder.Services.AddScoped<IWorkspaceService, WorkspaceService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
@@ -97,6 +101,7 @@ app.UseAuthentication();
 app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthorization();
 
+app.UseMiddleware<ErrorHandlingMiddleware>();
 app.MapControllers();
 
 app.Run();

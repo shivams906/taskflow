@@ -30,19 +30,14 @@ public class WorkspaceService : IWorkspaceService
     public async Task<WorkspaceDto?> GetWorkspaceByIdAsync(Guid workspaceId, Guid userId)
     {
         var workspace = await _context.Workspaces
-            .FirstOrDefaultAsync(w => w.Id == workspaceId && w.WorkspaceUsers.Any(wu => wu.UserId == userId));
-
+            .FirstOrDefaultAsync(w => w.Id == workspaceId) ?? throw new KeyNotFoundException("Workspace not found");
         return workspace == null ? null : _mapper.Map<WorkspaceDto>(workspace);
     }
 
     public async Task<WorkspaceDto> UpdateWorkspaceAsync(Guid workspaceId, UpdateWorkspaceDto updateDto, Guid userId)
     {
         var workspace = await _context.Workspaces
-            .FirstOrDefaultAsync(w => w.Id == workspaceId &&
-                w.WorkspaceUsers.Any(wu => wu.UserId == userId && (wu.Role == WorkspaceRole.Owner || wu.Role == WorkspaceRole.Admin)));
-
-        if (workspace == null) throw new UnauthorizedAccessException("Only the workspace owner or admin can update this project.");
-
+            .FirstOrDefaultAsync(w => w.Id == workspaceId) ?? throw new KeyNotFoundException("Workspace not found");
         workspace.Name = updateDto.Name;
         workspace.UpdatedById = userId;
         workspace.UpdatedAtUtc = DateTime.UtcNow;
@@ -83,12 +78,8 @@ public class WorkspaceService : IWorkspaceService
     public async Task DeleteWorkspaceAsync(Guid workspaceId, Guid userId)
     {
         var workspace = await _context.Workspaces
-            .FirstOrDefaultAsync(w => w.Id == workspaceId && w.WorkspaceUsers.Any(wu => wu.UserId == userId && wu.Role == WorkspaceRole.Owner));
-
-        if (workspace == null) throw new UnauthorizedAccessException("Only the owner can delete this workspace.");
-
+            .FirstOrDefaultAsync(w => w.Id == workspaceId) ?? throw new KeyNotFoundException("Workspace not found");
         _context.Workspaces.Remove(workspace);
-
         await _context.SaveChangesAsync();
     }
 
@@ -129,20 +120,13 @@ public class WorkspaceService : IWorkspaceService
 
     public async Task<ProjectDto> CreateProjectAsync(Guid workspaceId, CreateProjectDto projectDto, Guid userId)
     {
-        var workspace = await _context.Workspaces.FirstOrDefaultAsync(w => w.Id == workspaceId);
-        if (workspace == null) throw new KeyNotFoundException("Workspace does not exist");
-
-        var hasAccess = await _context.WorkspaceUsers.AnyAsync(wu => wu.WorkspaceId == workspaceId && wu.UserId == userId && (wu.Role == WorkspaceRole.Owner || wu.Role == WorkspaceRole.Admin));
-        if (!hasAccess) throw new UnauthorizedAccessException("You do not have access");
-
+        var workspace = await _context.Workspaces.FirstOrDefaultAsync(w => w.Id == workspaceId) ?? throw new KeyNotFoundException("Workspace does not exist");
         var project = _mapper.Map<Project>(projectDto);
         project.Id = Guid.NewGuid();
         project.CreatedById = userId;
         project.CreatedAtUtc = DateTime.UtcNow;
         project.WorkspaceId = workspaceId;
-
         _context.Projects.Add(project);
-
         var projectUser = new ProjectUser
         {
             ProjectId = project.Id,

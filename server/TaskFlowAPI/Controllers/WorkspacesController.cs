@@ -12,11 +12,13 @@ namespace TaskFlowAPI.Controllers
     {
         private readonly IWorkspaceService _workspaceService;
         private readonly ICurrentSessionProvider _currentSessionProvider;
+        private readonly IRoleAccessService _roleAccessService;
 
-        public WorkspacesController(IWorkspaceService workspaceService, ICurrentSessionProvider currentSessionProvider)
+        public WorkspacesController(IWorkspaceService workspaceService, ICurrentSessionProvider currentSessionProvider, IRoleAccessService roleAccessService)
         {
             _workspaceService = workspaceService;
             _currentSessionProvider = currentSessionProvider;
+            _roleAccessService = roleAccessService;
         }
 
         [HttpGet]
@@ -31,11 +33,9 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> GetById(Guid id)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
+            if (!await _roleAccessService.CanViewWorkspaceAsync(userId, id))
+                throw new UnauthorizedAccessException("You do not have access");
             var workspace = await _workspaceService.GetWorkspaceByIdAsync(id, userId);
-
-            if (workspace == null)
-                return NotFound("Workspace not found or you do not have access.");
-
             return Ok(workspace);
         }
 
@@ -43,16 +43,10 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> UpdatePartial(Guid id, [FromBody] UpdateWorkspaceDto updatedWorkspace)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-
-            try
-            {
-                var workspace = await _workspaceService.UpdateWorkspaceAsync(id, updatedWorkspace, userId);
-                return Ok(workspace);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
+            if (!await _roleAccessService.CanEditWorkspaceAsync(userId, id))
+                throw new UnauthorizedAccessException("You do not have access");
+            var workspace = await _workspaceService.UpdateWorkspaceAsync(id, updatedWorkspace, userId);
+            return Ok(workspace);
         }
 
         [HttpPost]
@@ -67,42 +61,26 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> Delete(Guid id)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-
-            try
-            {
-                await _workspaceService.DeleteWorkspaceAsync(id, userId);
-                return Ok("Workspace deleted.");
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
+            if (!await _roleAccessService.CanDeleteWorkspaceAsync(userId, id))
+                throw new UnauthorizedAccessException("You do not have access");
+            await _workspaceService.DeleteWorkspaceAsync(id, userId);
+            return Ok("Workspace deleted.");
         }
 
         [HttpPost("join")]
         public async Task<IActionResult> Join([FromBody] JoinWorkspaceDto dto)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-
-            try
-            {
-                var workspace = await _workspaceService.JoinWorkspaceAsync(dto.InviteCode, userId);
-                return Ok(workspace);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var workspace = await _workspaceService.JoinWorkspaceAsync(dto.InviteCode, userId);
+            return Ok(workspace);
         }
 
         [HttpGet("{workspaceId}/projects")]
         public async Task<IActionResult> GetProjects(Guid workspaceId)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
+            if (!await _roleAccessService.CanViewWorkspaceAsync(userId, workspaceId))
+                throw new UnauthorizedAccessException("You do not have access");
             var projects = await _workspaceService.GetProjectsForWorkspaceAsync(workspaceId, userId);
             return Ok(projects);
         }
@@ -111,20 +89,10 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> CreateProject(Guid workspaceId, [FromBody] CreateProjectDto dto)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-
-            try
-            {
-                var project = await _workspaceService.CreateProjectAsync(workspaceId, dto, userId);
-                return Ok(project);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
+            if (!await _roleAccessService.CanCreateProjectAsync(userId, workspaceId))
+                throw new UnauthorizedAccessException("You do not have access");
+            var project = await _workspaceService.CreateProjectAsync(workspaceId, dto, userId);
+            return Ok(project);
         }
 
         [HttpGet("{workspaceId}/my-tasks")]
@@ -138,6 +106,9 @@ namespace TaskFlowAPI.Controllers
         [HttpGet("{workspaceId}/users")]
         public async Task<IActionResult> GetWorkspaceUsers(Guid workspaceId)
         {
+            var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
+            if (!await _roleAccessService.CanViewWorkspaceAsync(userId, workspaceId))
+                throw new UnauthorizedAccessException("You do not have access");
             var users = await _workspaceService.GetWorkspaceUsersAsync(workspaceId);
             return Ok(users);
         }

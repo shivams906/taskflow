@@ -8,5 +8,5 @@ public interface IProjectService
     Task<ProjectDto?> GetProjectByIdAsync(Guid projectId, Guid userId);
     Task<ProjectDto?> UpdateProjectAsync(Guid projectId, CreateProjectDto updated, Guid userId);
     Task<bool> DeleteProjectAsync(Guid projectId, Guid userId);
-    Task<List<ProjectUserDto>> GetProjectUsersAsync(Guid projectId);
+    Task<List<ProjectUserDto>> GetProjectUsersAsync(Guid projectId, Guid userId);
 }

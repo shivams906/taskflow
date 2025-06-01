@@ -12,11 +12,13 @@ namespace TaskFlowAPI.Controllers
     {
         private readonly IProjectService _projectService;
         private readonly ICurrentSessionProvider _currentSessionProvider;
+        private readonly IRoleAccessService _roleAccessService;
 
-        public ProjectsController(IProjectService projectService, ICurrentSessionProvider currentSessionProvider)
+        public ProjectsController(IProjectService projectService, ICurrentSessionProvider currentSessionProvider, IRoleAccessService roleAccessService)
         {
             _projectService = projectService;
             _currentSessionProvider = currentSessionProvider;
+            _roleAccessService = roleAccessService;
         }
 
         [HttpGet]
@@ -31,28 +33,19 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> AddProjectUser(Guid id, [FromBody] AddProjectUserDto dto)
         {
             var currentUserId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-
-            try
-            {
-                var success = await _projectService.AddProjectUserAsync(id, dto, currentUserId);
-                if (!success)
-                    return Forbid("Only a project admin or workspace admin can add members.");
-                return Ok("User added to project successfully.");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            if (!await _roleAccessService.CanEditProjectAsync(currentUserId, id))
+                throw new UnauthorizedAccessException("You do not have access");
+            var success = await _projectService.AddProjectUserAsync(id, dto, currentUserId);
+            return Ok("User added to project successfully.");
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
+            if (!await _roleAccessService.CanViewProjectAsync(userId, id))
+                throw new UnauthorizedAccessException("You do not have access");
             var project = await _projectService.GetProjectByIdAsync(id, userId);
-
-            if (project == null)
-                return NotFound("Project not found or you do not have access.");
 
             return Ok(project);
         }
@@ -61,11 +54,9 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateProjectDto updated)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
+            if (!await _roleAccessService.CanEditProjectAsync(userId, id))
+                throw new UnauthorizedAccessException("You do not have access");
             var updatedProject = await _projectService.UpdateProjectAsync(id, updated, userId);
-
-            if (updatedProject == null)
-                return Forbid("Only the project creator can update this project.");
-
             return Ok(updatedProject);
         }
 
@@ -73,18 +64,19 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> Delete(Guid id)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
+            if (!await _roleAccessService.CanDeleteProjectAsync(userId, id))
+                throw new UnauthorizedAccessException("You do not have access");
             var deleted = await _projectService.DeleteProjectAsync(id, userId);
-
-            if (!deleted)
-                return Forbid("Only the creator can delete this project.");
-
             return Ok("Project deleted.");
         }
 
         [HttpGet("{id}/users")]
         public async Task<IActionResult> GetProjectUsers(Guid id)
         {
-            var users = await _projectService.GetProjectUsersAsync(id);
+            var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
+            if (!await _roleAccessService.CanViewProjectAsync(userId, id))
+                throw new UnauthorizedAccessException("You do not have access");
+            var users = await _projectService.GetProjectUsersAsync(id, userId);
             return Ok(users);
         }
     }
