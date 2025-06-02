@@ -262,7 +262,7 @@ const members = ref([]);
 
 const TABS = {
   DASHBOARD: "dashboard",
-  TASKS: "tasks",
+  PROJECTS: "projects",
   DISCUSSIONS: "discussions",
   MEMBERS: "members",
   ABOUT: "about",

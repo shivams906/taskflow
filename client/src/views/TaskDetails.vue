@@ -238,9 +238,8 @@ const filters = ref({
 const showUserFilter = ref(false);
 
 const TABS = {
-  DASHBOARD: "dashboard",
-  TASKS: "tasks",
   DISCUSSIONS: "discussions",
+  LOGS: "logs",
   MEMBERS: "members",
   ABOUT: "about",
   HISTORY: "history",
