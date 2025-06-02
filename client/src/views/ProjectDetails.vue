@@ -22,7 +22,7 @@
       </button>
     </div>
   </div>
-  <TabGroup>
+  <TabGroup :selectedIndex="selectedTab" @change="changeTab">
     <TabList class="flex space-x-4">
       <Tab v-slot="{ selected }">
         <span
@@ -300,7 +300,7 @@
 
 <script setup>
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@headlessui/vue";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch, watchEffect } from "vue";
 import api from "@/api/axios";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "vue-toastification";
@@ -332,6 +332,37 @@ const taskAssignments = ref({});
 
 const members = ref([]);
 const availableUsers = ref([]);
+
+const TABS = {
+  DASHBOARD: "dashboard",
+  TASKS: "tasks",
+  DISCUSSIONS: "discussions",
+  MEMBERS: "members",
+  ABOUT: "about",
+  HISTORY: "history",
+};
+const tabNames = Object.values(TABS);
+
+const selectedTab = ref(0);
+
+watchEffect(() => {
+  const tabParam = route.query.tab;
+  const index = tabNames.indexOf(tabParam);
+  selectedTab.value = index !== -1 ? index : 0;
+});
+
+watch(selectedTab, (newIndex) => {
+  router.push({
+    query: {
+      ...route.query,
+      tab: tabNames[newIndex],
+    },
+  });
+});
+
+function changeTab(index) {
+  selectedTab.value = index;
+}
 
 const fetchProjectMembers = async () => {
   try {
@@ -512,5 +543,11 @@ onMounted(async () => {
     fetchTasks(),
     fetchStatusOptions(),
   ]);
+
+  if (!route.query.tab) {
+    router.replace({
+      query: { ...route.query, tab: tabNames[0] },
+    });
+  }
 });
 </script>

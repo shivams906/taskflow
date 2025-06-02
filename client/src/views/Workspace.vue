@@ -1,6 +1,6 @@
 <template>
   <h1 class="text-2xl font-bold mb-4">Workspace: {{ workspace.name }}</h1>
-  <TabGroup>
+  <TabGroup :selectedIndex="selectedTab" @change="changeTab">
     <TabList class="flex space-x-4">
       <Tab v-slot="{ selected }">
         <span
@@ -260,6 +260,37 @@ const projects = ref([]);
 const workspaceStore = useWorkspaceStore();
 const members = ref([]);
 
+const TABS = {
+  DASHBOARD: "dashboard",
+  TASKS: "tasks",
+  DISCUSSIONS: "discussions",
+  MEMBERS: "members",
+  ABOUT: "about",
+  HISTORY: "history",
+};
+const tabNames = Object.values(TABS);
+
+const selectedTab = ref(0);
+
+watchEffect(() => {
+  const tabParam = route.query.tab;
+  const index = tabNames.indexOf(tabParam);
+  selectedTab.value = index !== -1 ? index : 0;
+});
+
+watch(selectedTab, (newIndex) => {
+  router.push({
+    query: {
+      ...route.query,
+      tab: tabNames[newIndex],
+    },
+  });
+});
+
+function changeTab(index) {
+  selectedTab.value = index;
+}
+
 const fetchWorkspaceMembers = async () => {
   try {
     const res = await api.get(`/api/workspaces/${workspaceId}/users`, {
@@ -310,7 +341,13 @@ watch(
   { immediate: true }
 );
 
-onMounted(() => {});
+onMounted(() => {
+  if (!route.query.tab) {
+    router.replace({
+      query: { ...route.query, tab: tabNames[0] },
+    });
+  }
+});
 
 const viewProject = (id) =>
   router.push({ name: "project", params: { workspaceId, projectId: id } });
