@@ -12,11 +12,13 @@ public class WorkspaceService : IWorkspaceService
 {
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
+    private readonly IChangeLogService _changeLogService;
 
-    public WorkspaceService(AppDbContext context, IMapper mapper)
+    public WorkspaceService(AppDbContext context, IMapper mapper, IChangeLogService changeLogService)
     {
         _context = context;
         _mapper = mapper;
+        _changeLogService = changeLogService;
     }
 
     public async Task<List<WorkspaceDto>> GetMyWorkspacesAsync(Guid userId)
@@ -38,11 +40,19 @@ public class WorkspaceService : IWorkspaceService
     {
         var workspace = await _context.Workspaces
             .FirstOrDefaultAsync(w => w.Id == workspaceId) ?? throw new KeyNotFoundException("Workspace not found");
-        workspace.Name = updateDto.Name;
+        var changes = new List<string>();
+        if (workspace.Name != updateDto.Name)
+        {
+            changes.Add($"Name changed from {workspace.Name} to {updateDto.Name}");
+            workspace.Name = updateDto.Name;
+        }
         workspace.UpdatedById = userId;
         workspace.UpdatedAtUtc = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        foreach (var summary in changes)
+            await _changeLogService.LogChange("Workspace", workspaceId, userId, summary);
 
         return _mapper.Map<WorkspaceDto>(workspace);
     }
@@ -72,6 +82,8 @@ public class WorkspaceService : IWorkspaceService
 
         await _context.SaveChangesAsync();
 
+        await _changeLogService.LogChange("Workspace", workspace.Id, userId, "Workspace created");
+
         return _mapper.Map<WorkspaceDto>(workspace);
     }
 
@@ -81,19 +93,19 @@ public class WorkspaceService : IWorkspaceService
             .FirstOrDefaultAsync(w => w.Id == workspaceId) ?? throw new KeyNotFoundException("Workspace not found");
         _context.Workspaces.Remove(workspace);
         await _context.SaveChangesAsync();
+        await _changeLogService.LogChange("Workspace", workspace.Id, userId, "Workspace deleted");
     }
 
     public async Task<WorkspaceDto> JoinWorkspaceAsync(string inviteCode, Guid userId)
     {
         var workspace = await _context.Workspaces
-            .FirstOrDefaultAsync(w => w.InviteCode == inviteCode);
-
-        if (workspace == null) throw new KeyNotFoundException("Invalid invite code");
-
+            .FirstOrDefaultAsync(w => w.InviteCode == inviteCode) ?? throw new KeyNotFoundException("Invalid invite code");
         var alreadyMember = await _context.WorkspaceUsers
             .AnyAsync(wu => wu.WorkspaceId == workspace.Id && wu.UserId == userId);
 
         if (alreadyMember) throw new InvalidOperationException("Already in this workspace.");
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId) ?? throw new KeyNotFoundException("Invalid user");
 
         _context.WorkspaceUsers.Add(new WorkspaceUser
         {
@@ -104,6 +116,7 @@ public class WorkspaceService : IWorkspaceService
 
         await _context.SaveChangesAsync();
 
+        await _changeLogService.LogChange("Workspace", workspace.Id, userId, $"{user.Username} joined");
         return _mapper.Map<WorkspaceDto>(workspace);
     }
 
@@ -141,6 +154,9 @@ public class WorkspaceService : IWorkspaceService
         await _context.SaveChangesAsync();
 
         await _context.Entry(project).Reference(p => p.CreatedBy).LoadAsync();
+
+        await _changeLogService.LogChange("Workspace", workspaceId, userId, $"Project {projectDto.Title} created");
+        await _changeLogService.LogChange("Project", project.Id, userId, $"Project created");
 
         return _mapper.Map<ProjectDto>(project);
     }

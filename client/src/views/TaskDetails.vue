@@ -88,17 +88,6 @@
               : 'text-gray-600'
           "
         >
-          Members
-        </span>
-      </Tab>
-      <Tab v-slot="{ selected }">
-        <span
-          :class="
-            selected
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          "
-        >
           About
         </span>
       </Tab>
@@ -185,8 +174,14 @@
         </div></TabPanel
       >
       <TabPanel> </TabPanel>
-      <TabPanel> </TabPanel>
-      <TabPanel> </TabPanel>
+      <TabPanel
+        ><ul>
+          <li v-for="item in history" :key="item.timestamp">
+            {{ formatDate(item.timestamp) }} - {{ item.changeSummary }} by
+            {{ item.changedByUserName }}
+          </li>
+        </ul>
+      </TabPanel>
     </TabPanels>
   </TabGroup>
 </template>
@@ -206,6 +201,8 @@ import {
   fetchTaskByIdFromApi,
 } from "@/api/task";
 import { fetchProjectUsersFromApi } from "@/api/project";
+import { fetchChangeLogsFromApi } from "@/api/changeLog";
+import { formatDate } from "@/utils/date";
 const toast = useToast();
 
 const route = useRoute();
@@ -231,7 +228,7 @@ const fetchStatusOptions = async () => {
 const fetchTask = async () => {
   task.value = await fetchTaskByIdFromApi(taskId);
 };
-
+const history = ref([]);
 const logs = ref([]);
 const users = ref([]);
 const filters = ref({
@@ -244,7 +241,6 @@ const showUserFilter = ref(false);
 const TABS = {
   DISCUSSIONS: "discussions",
   LOGS: "logs",
-  MEMBERS: "members",
   ABOUT: "about",
   HISTORY: "history",
 };
@@ -308,12 +304,6 @@ const filteredLogs = computed(() => {
   });
 });
 
-const formatDate = (dt) =>
-  new Date(`${dt}Z`).toLocaleString("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-
 const calculateMinutes = (start, end) => {
   return Math.round((new Date(end) - new Date(start)) / (1000 * 60));
 };
@@ -349,11 +339,16 @@ const assignTask = async (taskId) => {
   }
 };
 
+const loadHistory = async () => {
+  history.value = await fetchChangeLogsFromApi("task", taskId);
+};
+
 onMounted(() => {
   fetchStatusOptions();
   fetchTask();
   fetchLogs();
   fetchUsers();
+  loadHistory();
 
   if (!route.query.tab) {
     router.replace({

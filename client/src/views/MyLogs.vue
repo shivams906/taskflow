@@ -66,6 +66,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import AddLogModal from "@/components/AddLogModal.vue";
 import { fetchTimeLogsByTaskFromApi } from "../api/task";
+import { formatDate } from "@/utils/date";
 
 const route = useRoute();
 const taskId = route.params.taskId;
@@ -88,8 +89,6 @@ const openAddLogModal = () => {
 const closeAddLogModal = () => {
   showAddModal.value = false;
 };
-
-const formatDate = (dt) => new Date(`${dt}Z`).toLocaleString();
 
 const calculateMinutes = (start, end) => {
   return Math.round((new Date(end) - new Date(start)) / (1000 * 60));

@@ -15,6 +15,7 @@ namespace TaskFlowAPI.Data
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<Workspace> Workspaces => Set<Workspace>();
         public DbSet<WorkspaceUser> WorkspaceUsers => Set<WorkspaceUser>();
+        public DbSet<ChangeLog> ChangeLogs => Set<ChangeLog>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -160,6 +161,12 @@ namespace TaskFlowAPI.Data
                 .HasOne(p => p.UpdatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.UpdatedById)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            modelBuilder.Entity<ChangeLog>()
+                .HasOne(c => c.ChangedByUser)
+                .WithMany()
+                .HasForeignKey(c => c.ChangedByUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
         }
     }

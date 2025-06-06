@@ -26,6 +26,7 @@ builder.Services.AddScoped<IRoleAccessService, RoleAccessService>();
 builder.Services.AddScoped<IWorkspaceService, WorkspaceService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IChangeLogService, ChangeLogService>();
 builder.Services.AddScoped<AuditSaveChangesInterceptor>();
 
 

@@ -225,7 +225,14 @@
           </div>
         </div>
       </TabPanel>
-      <TabPanel></TabPanel>
+      <TabPanel>
+        <ul>
+          <li v-for="item in history" :key="item.timestamp">
+            {{ formatDate(item.timestamp) }} - {{ item.changeSummary }} by
+            {{ item.changedByUserName }}
+          </li>
+        </ul>
+      </TabPanel>
     </TabPanels>
   </TabGroup>
 </template>
@@ -233,11 +240,13 @@
 <script setup>
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@headlessui/vue";
 import { useRoute, useRouter } from "vue-router";
+import api from "@/api/axios";
 import { ref, onMounted, watch, watchEffect } from "vue";
 import { useToast } from "vue-toastification";
 import MemberList from "@/components/common/MemberList.vue";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
+import { fetchChangeLogsFromApi } from "@/api/changeLog";
 import {
   fetchWorkspaceByIdFromApi,
   fetchWorkspaceUsersFromApi,
@@ -245,7 +254,8 @@ import {
 import {
   fetchProjectsByWorkspaceFromApi,
   deleteProjectInApi,
-} from "../api/project";
+} from "@/api/project";
+import { formatDate } from "@/utils/date";
 
 const route = useRoute();
 const router = useRouter();
@@ -266,6 +276,7 @@ const workspace = ref({
 const projects = ref([]);
 const workspaceStore = useWorkspaceStore();
 const members = ref([]);
+const history = ref([]);
 
 const TABS = {
   DASHBOARD: "dashboard",
@@ -339,12 +350,17 @@ watch(
   { immediate: true }
 );
 
+const loadHistory = async () => {
+  history.value = await fetchChangeLogsFromApi("workspace", workspaceId);
+};
+
 onMounted(() => {
   if (!route.query.tab) {
     router.replace({
       query: { ...route.query, tab: tabNames[0] },
     });
   }
+  loadHistory();
 });
 
 const viewProject = (id) =>
@@ -357,12 +373,6 @@ const deleteProject = async (id) => {
   toast.success("Project deleted successfully!");
   fetchProjects();
 };
-
-const formatDate = (dt) =>
-  new Date(`${dt}Z`).toLocaleString("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
 
 const copyInviteCode = async () => {
   try {

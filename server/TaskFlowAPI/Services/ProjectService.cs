@@ -11,11 +11,13 @@ public class ProjectService : IProjectService
 {
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
+    private readonly IChangeLogService _changeLogService;
 
-    public ProjectService(AppDbContext context, IMapper mapper)
+    public ProjectService(AppDbContext context, IMapper mapper, IChangeLogService changeLogService)
     {
         _context = context;
         _mapper = mapper;
+        _changeLogService = changeLogService;
     }
 
     public async Task<List<ProjectDto>> GetMyProjectsAsync(Guid userId)
@@ -39,6 +41,8 @@ public class ProjectService : IProjectService
         bool alreadyAdded = await _context.ProjectUsers.AnyAsync(pu => pu.ProjectId == projectId && pu.UserId == dto.UserId);
         if (alreadyAdded) throw new InvalidOperationException("User is already a member of this project.");
 
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == dto.UserId) ?? throw new KeyNotFoundException("Invalid user");
+
         var projectUser = _mapper.Map<ProjectUser>(dto);
         projectUser.ProjectId = projectId;
         projectUser.CreatedById = currentUserId;
@@ -46,6 +50,8 @@ public class ProjectService : IProjectService
 
         _context.ProjectUsers.Add(projectUser);
         await _context.SaveChangesAsync();
+
+        await _changeLogService.LogChange("Project", projectId, currentUserId, $"{user.Name} added as {dto.Role}");
 
         return true;
     }
@@ -68,12 +74,24 @@ public class ProjectService : IProjectService
     {
         var project = await _context.Projects
             .FirstOrDefaultAsync(p => p.Id == projectId) ?? throw new KeyNotFoundException("Project not found");
-        project.Title = updated.Title;
-        project.Description = updated.Description;
+        var changes = new List<string>();
+        if (project.Title != updated.Title)
+        {
+            changes.Add($"Title updated from {project.Title} to {updated.Title}");
+            project.Title = updated.Title;
+        }
+        if (project.Description != updated.Description)
+        {
+            changes.Add($"Desctiption updated from {project.Description} to {updated.Description}");
+            project.Description = updated.Description;
+        }
         project.UpdatedById = userId;
         project.UpdatedAtUtc = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        foreach (var summary in changes)
+            await _changeLogService.LogChange("Project", projectId, userId, summary);
 
         return _mapper.Map<ProjectDto>(project);
     }
@@ -84,11 +102,15 @@ public class ProjectService : IProjectService
             .Include(p => p.Tasks)
             .Include(p => p.ProjectUsers)
             .FirstOrDefaultAsync(p => p.Id == projectId) ?? throw new KeyNotFoundException("Project not found");
+        var workspaceId = project.WorkspaceId;
         _context.Tasks.RemoveRange(project.Tasks);
         _context.ProjectUsers.RemoveRange(project.ProjectUsers);
         _context.Projects.Remove(project);
 
         await _context.SaveChangesAsync();
+
+        await _changeLogService.LogChange("Workspace", workspaceId, userId, $"Project {project.Title} deleted");
+        await _changeLogService.LogChange("Project", project.Id, userId, $"Project deleted");
 
         return true;
     }

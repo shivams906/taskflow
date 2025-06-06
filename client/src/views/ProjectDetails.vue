@@ -293,7 +293,14 @@
         <MemberList title="Project Members" :members="members" />
       </TabPanel>
       <TabPanel> </TabPanel>
-      <TabPanel> </TabPanel>
+      <TabPanel
+        ><ul>
+          <li v-for="item in history" :key="item.timestamp">
+            {{ formatDate(item.timestamp) }} - {{ item.changeSummary }} by
+            {{ item.changedByUserName }}
+          </li>
+        </ul>
+      </TabPanel>
     </TabPanels>
   </TabGroup>
 </template>
@@ -308,6 +315,7 @@ import MemberList from "@/components/common/MemberList.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
 import { fetchWorkspaceUsersFromApi } from "@/api/workspace";
+import { fetchChangeLogsFromApi } from "@/api/changeLog";
 import {
   AddProjectUserInApi,
   deleteProjectInApi,
@@ -321,6 +329,7 @@ import {
   assignTaskToUserInApi,
   unassignTaskFromUserInApi,
 } from "@/api/task";
+import { formatDate } from "@/utils/date";
 const toast = useToast();
 
 const authStore = useAuthStore();
@@ -336,6 +345,7 @@ const project = ref({
   description: "",
   createdAtUtc: "",
 });
+const history = ref([]);
 const tasks = ref([]);
 const statusOptions = ref([]);
 const filters = ref({ title: "", status: "", assignedTo: "", createdFrom: "" });
@@ -492,11 +502,9 @@ const confirmDelete = () => {
   }
 };
 
-const formatDate = (dt) =>
-  new Date(`${dt}Z`).toLocaleString("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+const loadHistory = async () => {
+  history.value = await fetchChangeLogsFromApi("project", projectId);
+};
 
 onMounted(async () => {
   await Promise.all([
@@ -505,6 +513,7 @@ onMounted(async () => {
     fetchAvailableUsers(),
     fetchTasks(),
     fetchStatusOptions(),
+    loadHistory(),
   ]);
 
   if (!route.query.tab) {

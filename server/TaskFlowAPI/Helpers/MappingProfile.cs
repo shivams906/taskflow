@@ -44,6 +44,8 @@ namespace TaskFlow.API.Helpers
                 .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.User.Username))
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()));
 
+            CreateMap<ChangeLog, ChangeLogDto>()
+                .ForMember(dest => dest.ChangedByUserName, opt => opt.MapFrom(src => src.ChangedByUser.Username));
         }
     }
 }

@@ -13,11 +13,13 @@ namespace TaskFlowAPI.Services
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IChangeLogService _changeLogService;
 
-        public TaskService(AppDbContext context, IMapper mapper)
+        public TaskService(AppDbContext context, IMapper mapper, IChangeLogService changeLogService)
         {
             _context = context;
             _mapper = mapper;
+            _changeLogService = changeLogService;
         }
 
         public async Task<List<TaskDto>> GetTasksForProjectAsync(Guid projectId, Guid userId)
@@ -48,6 +50,9 @@ namespace TaskFlowAPI.Services
             _context.Tasks.Add(taskItem);
             await _context.SaveChangesAsync();
 
+            await _changeLogService.LogChange("Project", dto.ProjectId, userId, $"Task {taskItem.Title} created.");
+            await _changeLogService.LogChange("Task", taskItem.Id, userId, $"Task created.");
+
             return _mapper.Map<TaskDto>(taskItem);
         }
 
@@ -62,6 +67,8 @@ namespace TaskFlowAPI.Services
             task.UpdatedById = userId;
             task.UpdatedAtUtc = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
+            await _changeLogService.LogChange("Task", taskId, userId, $"Status updated from {task.Status} to {statusEnum}");
 
             return "Task status updated.";
         }
@@ -102,12 +109,28 @@ namespace TaskFlowAPI.Services
         {
             var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
 
-            task.Title = updated.Title;
+            var changes = new List<string>();
+
+            if (task.Title != updated.Title)
+            {
+                changes.Add($"Title updated from {task.Title} to {updated.Title}");
+                task.Title = updated.Title;
+            }
+            if (task.Description != updated.Description)
+            {
+                changes.Add($"Description updated from {task.Description} to {updated.Description}");
+                task.Description = updated.Description;
+            }
             task.Description = updated.Description;
             task.UpdatedById = userId;
             task.UpdatedAtUtc = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            foreach (var summary in changes)
+            {
+                await _changeLogService.LogChange("Task", taskId, userId, summary);
+            }
 
             return _mapper.Map<TaskDto>(task);
         }
@@ -115,9 +138,12 @@ namespace TaskFlowAPI.Services
         public async Task<string> DeleteTaskAsync(Guid taskId, Guid userId)
         {
             var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
-
+            var projectId = task.ProjectId;
             _context.Tasks.Remove(task);
             await _context.SaveChangesAsync();
+
+            await _changeLogService.LogChange("Project", projectId, userId, $"Task {task.Title} deleted.");
+            await _changeLogService.LogChange("Task", taskId, userId, $"Task deleted");
 
             return "Task deleted.";
         }
@@ -132,6 +158,8 @@ namespace TaskFlowAPI.Services
             task.UpdatedAtUtc = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
+            await _changeLogService.LogChange("Task", taskId, userId, $"Task assigned to {targetUser.Username}");
+
             return "Task assigned.";
         }
 
@@ -143,6 +171,8 @@ namespace TaskFlowAPI.Services
             task.UpdatedById = userId;
             task.UpdatedAtUtc = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
+            await _changeLogService.LogChange("Task", taskId, userId, $"Task unassigned");
 
             return "Task unassigned.";
         }

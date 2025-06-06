@@ -1,10 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore;
-using TaskFlowAPI.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Text.Json;
 using TaskFlowAPI.Interfaces;
-using Microsoft.Extensions.Configuration.UserSecrets;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
+using TaskFlowAPI.Models;
 using TaskFlowAPI.Models.Enum;
 
 namespace TaskFlowAPI.Interceptors
@@ -28,12 +27,19 @@ namespace TaskFlowAPI.Interceptors
             var context = eventData.Context;
             if (context == null) return base.SavingChangesAsync(eventData, result, cancellationToken);
 
-            var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
+            var userId = _currentSessionProvider.GetUserId();
+
+            if (userId == null)
+            {
+                // Skip auditing when user ID is not available (e.g., during user registration)
+                return base.SavingChangesAsync(eventData, result, cancellationToken);
+            }
+
 
             var entries = context.ChangeTracker.Entries()
                 .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
                 .Where(e => e.Entity is not AuditLog)
-                .Select(x => CreateAuditLog(userId, x))
+                .Select(x => CreateAuditLog((Guid)userId, x))
                 .ToList();
 
             context.Set<AuditLog>().AddRange(entries);
@@ -48,7 +54,7 @@ namespace TaskFlowAPI.Interceptors
                 TableName = entry.Entity.GetType().Name,
                 UserId = userId,
             };
-            
+
             // Primary key
             var keyNames = entry.Properties
                 .Where(p => p.Metadata.IsPrimaryKey())
