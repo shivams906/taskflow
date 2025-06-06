@@ -102,7 +102,7 @@ namespace TaskFlowAPI.Controllers
             return Ok("Task deleted.");
         }
 
-        [HttpPut("{taskId}/assign")]
+        [HttpPost("{taskId}/assign")]
         public async Task<IActionResult> AssignTask(Guid taskId, [FromBody] AssignUserToTaskDto dto)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
@@ -112,7 +112,7 @@ namespace TaskFlowAPI.Controllers
             return Ok("Task assigned.");
         }
 
-        [HttpPut("{taskId}/unassign")]
+        [HttpPost("{taskId}/unassign")]
         public async Task<IActionResult> UnassignTask(Guid taskId)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");

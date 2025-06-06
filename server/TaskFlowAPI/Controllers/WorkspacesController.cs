@@ -39,8 +39,8 @@ namespace TaskFlowAPI.Controllers
             return Ok(workspace);
         }
 
-        [HttpPatch("{id}")]
-        public async Task<IActionResult> UpdatePartial(Guid id, [FromBody] UpdateWorkspaceDto updatedWorkspace)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWorkspaceDto updatedWorkspace)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
             if (!await _roleAccessService.CanEditWorkspaceAsync(userId, id))
@@ -54,7 +54,7 @@ namespace TaskFlowAPI.Controllers
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
             var workspace = await _workspaceService.CreateWorkspaceAsync(newWorkspace, userId);
-            return CreatedAtAction("GetWorkspace", new { id = workspace.Id }, workspace);
+            return CreatedAtAction("GetById", new { id = workspace.Id }, workspace);
         }
 
         [HttpDelete("{id}")]

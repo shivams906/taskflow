@@ -45,10 +45,10 @@
 
 <script setup>
 import { ref, watch } from "vue";
-import api from "@/api/axios";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "vue-toastification";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { createProjectInApi } from "@/api/project";
 const toast = useToast();
 
 const title = ref("");
@@ -72,20 +72,13 @@ watch(
 
 const createProject = async () => {
   try {
-    const res = await api.post(
-      `/api/workspaces/${workspaceId}/projects`,
-      {
-        title: title.value,
-        description: description.value,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
+    const data = await createProjectInApi(
+      workspaceId,
+      title.value,
+      description.value
     );
 
-    const projectId = res.data.id;
+    const projectId = data.id;
     toast.success("Project created successfully!");
     router.push({
       name: "project",

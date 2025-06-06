@@ -124,6 +124,11 @@ import api from "@/api/axios";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "vue-toastification";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
+import {
+  AddTimeLogToTaskInApi,
+  fetchTaskStatusOptionsFromApi,
+  updateTaskStatusInApi,
+} from "@/api/task";
 const toast = useToast();
 const route = useRoute();
 const router = useRouter();
@@ -175,10 +180,7 @@ const fetchTasks = async () => {
 // Fetch available task statuses
 const fetchStatusOptions = async () => {
   try {
-    const res = await api.get("/api/tasks/statuses", {
-      headers: authHeader(),
-    });
-    statusOptions.value = res.data;
+    statusOptions.value = await fetchTaskStatusOptionsFromApi();
   } catch (err) {
     console.error("Failed to load status options:", err);
   }
@@ -188,11 +190,7 @@ const fetchStatusOptions = async () => {
 const updateStatus = async (taskId) => {
   const newStatus = taskStatusUpdates.value[taskId];
   try {
-    await api.put(
-      `/api/tasks/${taskId}/status`,
-      { newStatus },
-      { headers: authHeader() }
-    );
+    await updateTaskStatusInApi(taskId, newStatus);
     toast.success("Task status updated successfully!");
     await fetchTasks();
   } catch (err) {
@@ -233,14 +231,7 @@ const endTimer = async (taskId) => {
   const endTime = new Date().toISOString();
 
   try {
-    await api.post(
-      `/api/tasks/${taskId}/log-time`,
-      {
-        startTime: timer.startTime,
-        endTime,
-      },
-      { headers: authHeader() }
-    );
+    await AddTimeLogToTaskInApi(taskId, timer.startTime, endTime);
     delete activeTimers.value[taskId];
     delete elapsedTimers.value[taskId];
 

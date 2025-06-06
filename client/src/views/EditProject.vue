@@ -46,8 +46,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import api from "@/api/axios";
 import { useToast } from "vue-toastification";
+import { fetchProjectByIdFromApi, updateProjectInApi } from "@/api/project";
 const toast = useToast();
 
 const route = useRoute();
@@ -61,11 +61,9 @@ const error = ref("");
 // load existing project
 const fetchProject = async () => {
   try {
-    const res = await api.get(`/api/projects/${projectId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
-    title.value = res.data.title;
-    description.value = res.data.description;
+    const data = await fetchProjectByIdFromApi(projectId);
+    title.value = data.title;
+    description.value = data.description;
   } catch (err) {
     console.error("Failed to load project", err);
     error.value = "Could not load project data.";
@@ -74,16 +72,7 @@ const fetchProject = async () => {
 
 const updateProject = async () => {
   try {
-    await api.put(
-      `/api/projects/${projectId}`,
-      {
-        title: title.value,
-        description: description.value,
-      },
-      {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      }
-    );
+    await updateProjectInApi(projectId, title.value, description.value);
     toast.success("Project updated successfully!");
     router.go(-1); // Go back to the previous page
   } catch (err) {

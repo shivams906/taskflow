@@ -17,9 +17,9 @@
 
 <script setup>
 import { ref } from "vue";
-import api from "@/api/axios";
 import { useRouter } from "vue-router";
 import { useWorkspaceStore } from "../stores/workspaceStore";
+import { sendWorkspaceJoiningRequestToApi } from "../api/workspace";
 
 const inviteCode = ref("");
 const router = useRouter();
@@ -27,15 +27,9 @@ const workspaceStore = useWorkspaceStore();
 
 const joinWorkspace = async () => {
   try {
-    const res = await api.post(
-      "/api/workspaces/join",
-      { inviteCode: inviteCode.value },
-      {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      }
-    );
+    const data = await sendWorkspaceJoiningRequestToApi(inviteCode.value);
     alert("Joined workspace successfully!");
-    const workspaceId = res.data.id;
+    const workspaceId = data.id;
     await workspaceStore.refreshAndSelectWorkspace(workspaceId);
     router.push({
       name: "workspace",

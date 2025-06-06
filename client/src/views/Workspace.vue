@@ -232,13 +232,20 @@
 
 <script setup>
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@headlessui/vue";
-import api from "@/api/axios";
 import { useRoute, useRouter } from "vue-router";
 import { ref, onMounted, watch, watchEffect } from "vue";
 import { useToast } from "vue-toastification";
 import MemberList from "@/components/common/MemberList.vue";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
+import {
+  fetchWorkspaceByIdFromApi,
+  fetchWorkspaceUsersFromApi,
+} from "@/api/workspace";
+import {
+  fetchProjectsByWorkspaceFromApi,
+  deleteProjectInApi,
+} from "../api/project";
 
 const route = useRoute();
 const router = useRouter();
@@ -293,10 +300,7 @@ function changeTab(index) {
 
 const fetchWorkspaceMembers = async () => {
   try {
-    const res = await api.get(`/api/workspaces/${workspaceId}/users`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
-    members.value = res.data;
+    members.value = await fetchWorkspaceUsersFromApi(workspaceId);
   } catch (err) {
     console.error("Error loading workspace members", err);
   }
@@ -309,10 +313,7 @@ watchEffect(() => {
 
 const fetchWorkspace = async () => {
   try {
-    const res = await api.get(`/api/workspaces/${workspaceId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
-    workspace.value = res.data;
+    workspace.value = await fetchWorkspaceByIdFromApi(workspaceId);
   } catch (err) {
     console.error("Failed to load workspace", err);
   }
@@ -320,10 +321,7 @@ const fetchWorkspace = async () => {
 
 const fetchProjects = async () => {
   try {
-    const res = await api.get(`/api/workspaces/${workspaceId}/projects`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
-    projects.value = res.data;
+    projects.value = await fetchProjectsByWorkspaceFromApi(workspaceId);
   } catch (err) {
     console.error("Failed to load projects", err);
   }
@@ -355,9 +353,7 @@ const editProject = (id) =>
   router.push({ name: "editProject", params: { workspaceId, projectId: id } });
 const deleteProject = async (id) => {
   if (!confirm("Delete this project?")) return;
-  await api.delete(`/api/projects/${id}`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
+  await deleteProjectInApi(id);
   toast.success("Project deleted successfully!");
   fetchProjects();
 };

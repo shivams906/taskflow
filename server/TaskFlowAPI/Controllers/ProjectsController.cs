@@ -50,7 +50,7 @@ namespace TaskFlowAPI.Controllers
             return Ok(project);
         }
 
-        [HttpPatch("{id}")]
+        [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateProjectDto updated)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");

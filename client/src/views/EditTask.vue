@@ -46,8 +46,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import api from "@/api/axios";
 import { useToast } from "vue-toastification";
+import { updateTaskInApi, fetchTaskByIdFromApi } from "@/api/task";
 const toast = useToast();
 
 const route = useRoute();
@@ -60,30 +60,14 @@ const description = ref("");
 const error = ref("");
 
 const fetchTask = async () => {
-  const res = await api.get(`/api/tasks/${taskId}`, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  });
+  const res = await fetchTaskByIdFromApi(taskId);
   title.value = res.data.title;
   description.value = res.data.description;
 };
 
 const updateTask = async () => {
   try {
-    await api.put(
-      `/api/tasks/${taskId}`,
-      {
-        projectId: projectId,
-        title: title.value,
-        description: description.value,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
+    await updateTaskInApi(taskId, title.value, description.value);
 
     toast.success("Task updated successfully!");
     router.go(-1); // Go back to the previous page

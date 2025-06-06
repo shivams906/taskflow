@@ -132,9 +132,9 @@
               v-model="filters.assignedTo"
               class="px-3 py-2 rounded border text-black w-full"
             >
-              <option value="">All Users</option>
-              <option v-for="u in users" :key="u.userId" :value="u.userId">
-                {{ u.username }}
+              <option value="">All Members</option>
+              <option v-for="m in members" :key="m.userId" :value="m.userId">
+                {{ m.username }}
               </option>
             </select>
             <input
@@ -186,11 +186,11 @@
                   >
                     <option :value="null">-- Unassigned --</option>
                     <option
-                      v-for="u in users"
-                      :key="u.userId"
-                      :value="u.userId"
+                      v-for="m in members"
+                      :key="m.userId"
+                      :value="m.userId"
                     >
-                      {{ u.username }}
+                      {{ m.username }}
                     </option>
                   </select>
                 </td>
@@ -307,6 +307,20 @@ import { useToast } from "vue-toastification";
 import MemberList from "@/components/common/MemberList.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
+import { fetchWorkspaceUsersFromApi } from "@/api/workspace";
+import {
+  AddProjectUserInApi,
+  deleteProjectInApi,
+  fetchProjectByIdFromApi,
+  fetchProjectUsersFromApi,
+} from "../api/project";
+import {
+  fetchTasksByProjectFromApi,
+  updateTaskStatusInApi,
+  fetchTaskStatusOptionsFromApi,
+  assignTaskToUserInApi,
+  unassignTaskFromUserInApi,
+} from "@/api/task";
 const toast = useToast();
 
 const authStore = useAuthStore();
@@ -322,7 +336,6 @@ const project = ref({
   description: "",
   createdAtUtc: "",
 });
-const users = ref([]);
 const tasks = ref([]);
 const statusOptions = ref([]);
 const filters = ref({ title: "", status: "", assignedTo: "", createdFrom: "" });
@@ -366,23 +379,17 @@ function changeTab(index) {
 
 const fetchProjectMembers = async () => {
   try {
-    const res = await api.get(`/api/projects/${projectId}/users`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
-    members.value = res.data;
+    members.value = await fetchProjectUsersFromApi(projectId);
   } catch (err) {
     console.error("Error loading project members", err);
   }
 };
 const fetchAvailableUsers = async () => {
   try {
-    const res = await api.get(`/api/workspaces/${workspaceId}/users`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
-
+    const allUsers = await fetchWorkspaceUsersFromApi(workspaceId);
     // Filter out already added project members
     const addedIds = new Set(members.value.map((m) => m.userId));
-    availableUsers.value = res.data.filter(
+    availableUsers.value = allUsers.filter(
       (user) => !addedIds.has(user.userId)
     );
   } catch (err) {
@@ -403,46 +410,28 @@ const addUserToProject = async () => {
   if (!selectedUserId.value) return;
 
   try {
-    await api.post(
-      `/api/projects/${route.params.projectId}/users`,
-      {
-        userId: selectedUserId.value,
-        role: "Member",
-      },
-      {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      }
+    await AddProjectUserInApi(
+      route.params.projectId,
+      selectedUserId.value,
+      "Member"
     );
+    toast.success("Member added successfully!");
 
-    alert("Member added!");
     selectedUserId.value = "";
     await fetchProjectMembers(); // reload member list
     await fetchAvailableUsers(); // update dropdown
   } catch (err) {
     console.error("Failed to add member", err);
-    alert("Something went wrong.");
+    toast.error("Something went wrong.");
   }
 };
 
 const fetchProject = async () => {
-  const res = await api.get(`/api/projects/${projectId}`, {
-    headers: authHeader(),
-  });
-  project.value = res.data;
-};
-
-const fetchUsers = async () => {
-  const res = await api.get(`/api/projects/${projectId}/users`, {
-    headers: authHeader(),
-  });
-  users.value = res.data;
+  project.value = await fetchProjectByIdFromApi(projectId);
 };
 
 const fetchTasks = async () => {
-  const res = await api.get(`/api/tasks/project/${projectId}`, {
-    headers: authHeader(),
-  });
-  tasks.value = res.data;
+  tasks.value = await fetchTasksByProjectFromApi(projectId);
   tasks.value.forEach((t) => {
     taskStatusUpdates.value[t.id] = t.status;
     taskAssignments.value[t.id] = t.assignedToId;
@@ -450,10 +439,7 @@ const fetchTasks = async () => {
 };
 
 const fetchStatusOptions = async () => {
-  const res = await api.get("/api/tasks/statuses", {
-    headers: authHeader(),
-  });
-  statusOptions.value = res.data;
+  statusOptions.value = await fetchTaskStatusOptionsFromApi();
 };
 
 const filteredTasks = computed(() => {
@@ -473,36 +459,20 @@ const filteredTasks = computed(() => {
 
 const updateTaskStatus = async (taskId) => {
   const newStatus = taskStatusUpdates.value[taskId];
-  await api.put(
-    `/api/tasks/${taskId}/status`,
-    { newStatus },
-    { headers: authHeader() }
-  );
+  await updateTaskStatusInApi(taskId, newStatus);
   toast.success("Task status updated successfully!");
 };
 
 const assignTask = async (taskId) => {
   const userId = taskAssignments.value[taskId];
   if (userId) {
-    await api.put(
-      `/api/tasks/${taskId}/assign/`,
-      { userId },
-      { headers: authHeader() }
-    );
+    await assignTaskToUserInApi(taskId, userId);
     toast.success("Task assigned successfully!");
   } else {
-    await api.put(
-      `/api/tasks/${taskId}/unassign`,
-      {},
-      { headers: authHeader() }
-    );
+    await unassignTaskFromUserInApi(taskId);
     toast.success("Task unassigned successfully!");
   }
 };
-
-const authHeader = () => ({
-  Authorization: `Bearer ${localStorage.getItem("token")}`,
-});
 
 const viewTask = (taskId) =>
   router.push({ name: "task", params: { workspaceId, projectId, taskId } });
@@ -510,20 +480,14 @@ const editTask = (taskId) =>
   router.push({ name: "editTask", params: { workspaceId, projectId, taskId } });
 const deleteTask = async (taskId) => {
   if (!confirm("Delete this task?")) return;
-  await api.delete(`/api/tasks/${taskId}`, {
-    headers: authHeader(),
-  });
+  await deleteTaskFromApi(taskId);
   toast.success("Task deleted successfully!");
   fetchTasks();
 };
 
 const confirmDelete = () => {
   if (confirm("Delete this project?")) {
-    api
-      .delete(`/api/projects/${projectId}`, {
-        headers: authHeader(),
-      })
-      .then(() => router.push("/admin/projects"));
+    deleteProjectInApi(projectId).then(() => router.push("/admin/projects"));
     toast.success("Project deleted successfully!");
   }
 };
@@ -539,7 +503,6 @@ onMounted(async () => {
     fetchProject(),
     fetchProjectMembers(),
     fetchAvailableUsers(),
-    fetchUsers(),
     fetchTasks(),
     fetchStatusOptions(),
   ]);

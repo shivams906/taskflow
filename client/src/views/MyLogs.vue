@@ -64,8 +64,8 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import api from "@/api/axios";
 import AddLogModal from "@/components/AddLogModal.vue";
+import { fetchTimeLogsByTaskFromApi } from "../api/task";
 
 const route = useRoute();
 const taskId = route.params.taskId;
@@ -73,16 +73,9 @@ const logs = ref([]);
 const filters = ref({ startDate: "", endDate: "" });
 const showAddModal = ref(false);
 
-const authHeader = () => ({
-  Authorization: `Bearer ${localStorage.getItem("token")}`,
-});
-
 const fetchLogs = async () => {
   try {
-    const res = await api.get(`/api/tasks/${taskId}/logs?onlyMine=true`, {
-      headers: authHeader(),
-    });
-    logs.value = res.data;
+    logs.value = await fetchTimeLogsByTaskFromApi(taskId, true);
   } catch (err) {
     console.error("Failed to load logs:", err);
   }

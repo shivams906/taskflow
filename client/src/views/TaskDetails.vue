@@ -196,6 +196,16 @@ import { ref, computed, onMounted, watch, watchEffect } from "vue";
 import api from "@/api/axios";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "vue-toastification";
+import {
+  fetchTimeLogsByTaskFromApi,
+  updateTaskStatusInApi,
+  assignTaskToUserInApi,
+  unassignTaskFromUserInApi,
+  deleteTaskFromApi,
+  fetchTaskStatusOptionsFromApi,
+  fetchTaskByIdFromApi,
+} from "@/api/task";
+import { fetchProjectUsersFromApi } from "@/api/project";
 const toast = useToast();
 
 const route = useRoute();
@@ -216,16 +226,10 @@ const task = ref({
 });
 
 const fetchStatusOptions = async () => {
-  const res = await api.get("/api/tasks/statuses", {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
-  statusOptions.value = res.data;
+  statusOptions.value = await fetchTaskStatusOptionsFromApi();
 };
 const fetchTask = async () => {
-  const res = await api.get(`/api/tasks/${taskId}`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
-  task.value = res.data;
+  task.value = await fetchTaskByIdFromApi(taskId);
 };
 
 const logs = ref([]);
@@ -269,13 +273,10 @@ function changeTab(index) {
 
 const fetchLogs = async () => {
   try {
-    const res = await api.get(`/api/tasks/${taskId}/logs`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
-    logs.value = res.data;
+    logs.value = await fetchTimeLogsByTaskFromApi(taskId);
 
     // Determine if we have multiple users
-    const uniqueUsers = [...new Set(res.data.map((log) => log.username))];
+    const uniqueUsers = [...new Set(logs.value.map((log) => log.username))];
     showUserFilter.value = uniqueUsers.length > 1;
   } catch (err) {
     console.error("Failed to load logs", err);
@@ -284,10 +285,7 @@ const fetchLogs = async () => {
 
 const fetchUsers = async () => {
   try {
-    const res = await api.get(`/api/projects/${projectId}/users`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
-    users.value = res.data;
+    users.value = await fetchProjectUsersFromApi(projectId);
   } catch (err) {
     console.error("Failed to load users", err);
   }
@@ -328,9 +326,7 @@ const totalTime = computed(() => {
 
 const deleteTask = async () => {
   if (!confirm("Delete this task?")) return;
-  await api.delete(`/api/tasks/${taskId}`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  });
+  await deleteTaskFromApi(taskId);
   toast.success("Task deleted successfully!");
   // after delete, go back to project detail
   router.push(`/admin/projects/${projectId}`);
@@ -338,29 +334,17 @@ const deleteTask = async () => {
 
 const updateTaskStatus = async (taskId) => {
   const newStatus = task.value.status;
-  await api.put(
-    `/api/tasks/${taskId}/status`,
-    { newStatus },
-    { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-  );
+  await updateTaskStatusInApi(taskId, newStatus);
   toast.success("Task status updated successfully!");
 };
 
 const assignTask = async (taskId) => {
   const userId = task.value.assignedToId;
   if (userId) {
-    await api.put(
-      `/api/tasks/${taskId}/assign/`,
-      { userId },
-      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-    );
+    await assignTaskToUserInApi(taskId, userId);
     toast.success("Task assigned successfully!");
   } else {
-    await api.put(
-      `/api/tasks/${taskId}/unassign`,
-      {},
-      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-    );
+    await unassignTaskFromUserInApi(taskId);
     toast.success("Task unassigned successfully!");
   }
 };

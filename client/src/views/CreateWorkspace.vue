@@ -36,10 +36,10 @@
 
 <script setup>
 import { ref, watch } from "vue";
-import api from "@/api/axios";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "vue-toastification";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { sendWorkspaceDataToApi } from "@/api/workspace";
 const toast = useToast();
 
 const name = ref("");
@@ -51,23 +51,13 @@ const store = useWorkspaceStore();
 
 const createWorkspace = async () => {
   try {
-    const res = await api.post(
-      `/api/workspaces/`,
-      {
-        name: name.value,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
+    const data = await sendWorkspaceDataToApi(name.value);
 
-    const workspaceId = res.data.id;
+    const workspaceId = data.id;
     toast.success("Workspace created successfully!");
     await store.refreshAndSelectWorkspace(workspaceId); // Refresh the workspace store
     router.push({
-      name: "projects",
+      name: "workspace",
       params: { workspaceId },
     });
   } catch (err) {

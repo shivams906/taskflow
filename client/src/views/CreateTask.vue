@@ -46,8 +46,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import api from "@/api/axios";
 import { useToast } from "vue-toastification";
+import { createTaskInApi } from "@/api/task";
 const toast = useToast();
 
 const route = useRoute();
@@ -60,19 +60,7 @@ const error = ref("");
 
 const createTask = async () => {
   try {
-    await api.post(
-      `/api/tasks`,
-      {
-        projectId: projectId,
-        title: title.value,
-        description: description.value,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
+    await createTaskInApi(projectId, title.value, description.value);
 
     toast.success("Task created successfully!");
 

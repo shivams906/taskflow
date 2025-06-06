@@ -131,7 +131,7 @@ public class WorkspaceService : IWorkspaceService
         {
             ProjectId = project.Id,
             UserId = userId,
-            Role = ProjectRole.Admin,
+            Role = ProjectRole.Owner,
             CreatedById = userId,
             CreatedAtUtc = DateTime.UtcNow
         };
