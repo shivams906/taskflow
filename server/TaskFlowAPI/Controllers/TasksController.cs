@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Interfaces;
+using TaskFlowAPI.Models.Enum;
 using TaskFlowAPI.Models.Enums;
 
 namespace TaskFlowAPI.Controllers
@@ -26,7 +27,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> GetTasksForProject(Guid projectId)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanViewProjectAsync(userId, projectId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, ProjectPermission.ViewProject, projectId))
                 throw new UnauthorizedAccessException("You do not have access");
             var tasks = await _taskService.GetTasksForProjectAsync(projectId, userId);
             return Ok(tasks);
@@ -36,7 +37,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> GetTaskById(Guid taskId)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanViewTaskAsync(userId, taskId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, TaskPermission.ViewTask, taskId))
                 throw new UnauthorizedAccessException("You do not have access");
             var task = await _taskService.GetTaskByIdAsync(taskId, userId);
             return Ok(task);
@@ -46,7 +47,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> CreateTask([FromBody] CreateTaskDto task)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanCreateTaskAsync(userId, task.ProjectId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, ProjectPermission.ManageProject, task.ProjectId))
                 throw new UnauthorizedAccessException("You do not have access");
             var createdTask = await _taskService.CreateTaskAsync(task, userId);
             return Ok(createdTask);
@@ -56,7 +57,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> UpdateStatus(Guid taskId, [FromBody] UpdateTaskStatusDto dto)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanUpdateTaskStatusAsync(userId, taskId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, TaskPermission.UpdateTaskStatus, taskId))
                 throw new UnauthorizedAccessException("You do not have access");
             await _taskService.UpdateTaskStatusAsync(taskId, dto, userId);
             return Ok("Task status updated.");
@@ -66,7 +67,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> LogTime(Guid taskId, [FromBody] CreateTimeLogDto dto)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanLogTimeAsync(userId, taskId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, TaskPermission.LogTime, taskId))
                 throw new UnauthorizedAccessException("You do not have access");
             await _taskService.LogTimeAsync(taskId, dto, userId);
             return Ok("Time log saved.");
@@ -76,7 +77,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> GetTimeLogsForTask(Guid taskId, [FromQuery] bool onlyMine = false)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanViewTaskAsync(userId, taskId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, TaskPermission.ViewTask, taskId))
                 throw new UnauthorizedAccessException("You do not have access");
             var logs = await _taskService.GetTimeLogsAsync(taskId, userId, onlyMine);
             return Ok(logs);
@@ -86,7 +87,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> UpdateTask(Guid taskId, [FromBody] CreateTaskDto updated)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanEditTaskAsync(userId, taskId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, TaskPermission.ManageTask, taskId))
                 throw new UnauthorizedAccessException("You do not have access");
             var task = await _taskService.UpdateTaskAsync(taskId, updated, userId);
             return Ok(task);
@@ -96,7 +97,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> DeleteTask(Guid taskId)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanDeleteTaskAsync(userId, taskId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, TaskPermission.DeleteTask, taskId))
                 throw new UnauthorizedAccessException("You do not have access");
             await _taskService.DeleteTaskAsync(taskId, userId);
             return Ok("Task deleted.");
@@ -106,7 +107,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> AssignTask(Guid taskId, [FromBody] AssignUserToTaskDto dto)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanEditTaskAsync(userId, taskId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, TaskPermission.ManageTask, taskId))
                 throw new UnauthorizedAccessException("You do not have access");
             await _taskService.AssignTaskAsync(taskId, dto, userId);
             return Ok("Task assigned.");
@@ -116,7 +117,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> UnassignTask(Guid taskId)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanEditTaskAsync(userId, taskId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, TaskPermission.ManageTask, taskId))
                 throw new UnauthorizedAccessException("You do not have access");
             await _taskService.UnassignTaskAsync(taskId, userId);
             return Ok("Task unassigned.");

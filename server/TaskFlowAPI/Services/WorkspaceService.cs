@@ -13,27 +13,40 @@ public class WorkspaceService : IWorkspaceService
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
     private readonly IChangeLogService _changeLogService;
+    private readonly IRoleAccessService _roleAccessService;
 
-    public WorkspaceService(AppDbContext context, IMapper mapper, IChangeLogService changeLogService)
+    public WorkspaceService(AppDbContext context, IMapper mapper, IChangeLogService changeLogService, IRoleAccessService roleAccessService)
     {
         _context = context;
         _mapper = mapper;
         _changeLogService = changeLogService;
+        _roleAccessService = roleAccessService;
     }
 
     public async Task<List<WorkspaceDto>> GetMyWorkspacesAsync(Guid userId)
     {
-        return await _context.Workspaces
+        var workspaceEntities = await _context.Workspaces
+            .Include(w => w.WorkspaceUsers)
             .Where(w => w.WorkspaceUsers.Any(wu => wu.UserId == userId))
-            .Select(w => _mapper.Map<WorkspaceDto>(w))
             .ToListAsync();
+
+        var workspaceDtos = _mapper.Map<List<WorkspaceDto>>(workspaceEntities);
+
+        foreach (var dto in workspaceDtos)
+        {
+            dto.Permissions = await _roleAccessService.GetPermissionsForWorkspaceAsync(userId, dto.Id);
+        }
+
+        return workspaceDtos;
     }
 
     public async Task<WorkspaceDto?> GetWorkspaceByIdAsync(Guid workspaceId, Guid userId)
     {
         var workspace = await _context.Workspaces
             .FirstOrDefaultAsync(w => w.Id == workspaceId) ?? throw new KeyNotFoundException("Workspace not found");
-        return workspace == null ? null : _mapper.Map<WorkspaceDto>(workspace);
+        var workspaceDto = _mapper.Map<WorkspaceDto>(workspace);
+        workspaceDto.Permissions = await _roleAccessService.GetPermissionsForWorkspaceAsync(userId, workspaceId);
+        return workspaceDto;
     }
 
     public async Task<WorkspaceDto> UpdateWorkspaceAsync(Guid workspaceId, UpdateWorkspaceDto updateDto, Guid userId)
@@ -54,7 +67,9 @@ public class WorkspaceService : IWorkspaceService
         foreach (var summary in changes)
             await _changeLogService.LogChange("Workspace", workspaceId, userId, summary);
 
-        return _mapper.Map<WorkspaceDto>(workspace);
+        var workspaceDto = _mapper.Map<WorkspaceDto>(workspace);
+        workspaceDto.Permissions = await _roleAccessService.GetPermissionsForWorkspaceAsync(userId, workspaceId);
+        return workspaceDto;
     }
 
     public async Task<WorkspaceDto> CreateWorkspaceAsync(CreateWorkspaceDto newWorkspaceDto, Guid userId)
@@ -84,7 +99,9 @@ public class WorkspaceService : IWorkspaceService
 
         await _changeLogService.LogChange("Workspace", workspace.Id, userId, "Workspace created");
 
-        return _mapper.Map<WorkspaceDto>(workspace);
+        var workspaceDto = _mapper.Map<WorkspaceDto>(workspace);
+        workspaceDto.Permissions = await _roleAccessService.GetPermissionsForWorkspaceAsync(userId, workspace.Id);
+        return workspaceDto;
     }
 
     public async Task DeleteWorkspaceAsync(Guid workspaceId, Guid userId)
@@ -117,24 +134,32 @@ public class WorkspaceService : IWorkspaceService
         await _context.SaveChangesAsync();
 
         await _changeLogService.LogChange("Workspace", workspace.Id, userId, $"{user.Username} joined");
-        return _mapper.Map<WorkspaceDto>(workspace);
+
+        var workspaceDto = _mapper.Map<WorkspaceDto>(workspace);
+        workspaceDto.Permissions = await _roleAccessService.GetPermissionsForWorkspaceAsync(userId, workspace.Id);
+        return workspaceDto;
     }
 
     public async Task<List<ProjectDto>> GetProjectsForWorkspaceAsync(Guid workspaceId, Guid userId)
     {
-        return await _context.Projects
-            .Where(p => (p.CreatedById == userId || p.ProjectUsers.Any(pu => pu.UserId == userId)) && p.WorkspaceId == workspaceId)
-            .Include(p => p.ProjectUsers)!
+        var projects = await _context.Projects
+            .Where(p => p.WorkspaceId == workspaceId && (p.CreatedById == userId || p.ProjectUsers.Any(pu => pu.UserId == userId)))
+            .Include(p => p.ProjectUsers)
                 .ThenInclude(pu => pu.User)
             .Include(p => p.CreatedBy)
-            .Select(p => _mapper.Map<ProjectDto>(p))
             .ToListAsync();
+        var projectDtos = _mapper.Map<List<ProjectDto>>(projects);
+        foreach (var dto in projectDtos)
+        {
+            dto.Permissions = await _roleAccessService.GetPermissionsForProjectAsync(userId, dto.Id);
+        }
+        return projectDtos;
     }
 
-    public async Task<ProjectDto> CreateProjectAsync(Guid workspaceId, CreateProjectDto projectDto, Guid userId)
+    public async Task<ProjectDto> CreateProjectAsync(Guid workspaceId, CreateProjectDto dto, Guid userId)
     {
         var workspace = await _context.Workspaces.FirstOrDefaultAsync(w => w.Id == workspaceId) ?? throw new KeyNotFoundException("Workspace does not exist");
-        var project = _mapper.Map<Project>(projectDto);
+        var project = _mapper.Map<Project>(dto);
         project.Id = Guid.NewGuid();
         project.CreatedById = userId;
         project.CreatedAtUtc = DateTime.UtcNow;
@@ -155,10 +180,12 @@ public class WorkspaceService : IWorkspaceService
 
         await _context.Entry(project).Reference(p => p.CreatedBy).LoadAsync();
 
-        await _changeLogService.LogChange("Workspace", workspaceId, userId, $"Project {projectDto.Title} created");
+        await _changeLogService.LogChange("Workspace", workspaceId, userId, $"Project {dto.Title} created");
         await _changeLogService.LogChange("Project", project.Id, userId, $"Project created");
 
-        return _mapper.Map<ProjectDto>(project);
+        var projectDto = _mapper.Map<ProjectDto>(project);
+        projectDto.Permissions = await _roleAccessService.GetPermissionsForProjectAsync(userId, project.Id);
+        return projectDto;
     }
 
     public async Task<List<TaskDto>> GetMyTasksAsync(Guid workspaceId, Guid userId)
@@ -166,10 +193,13 @@ public class WorkspaceService : IWorkspaceService
         var tasks = await _context.Tasks
             .Include(t => t.Project)
             .Where(t => t.AssignedToId == userId && t.Project.WorkspaceId == workspaceId)
-            .Select(t => _mapper.Map<TaskDto>(t))
             .ToListAsync();
-
-        return tasks;
+        var taskDtos = _mapper.Map<List<TaskDto>>(tasks);
+        foreach (var dto in taskDtos)
+        {
+            dto.Permissions = await _roleAccessService.GetPermissionsForTaskAsync(userId, dto.Id);
+        }
+        return taskDtos;
     }
 
     public async Task<List<WorkspaceUserDto>> GetWorkspaceUsersAsync(Guid workspaceId)

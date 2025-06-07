@@ -4,7 +4,7 @@ using TaskFlowAPI.Data;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Interfaces;
 using TaskFlowAPI.Models;
-using TaskFlowAPI.Models.Enums;
+using TaskFlowAPI.Models.Enum;
 
 namespace TaskFlowAPI.Services;
 public class ProjectService : IProjectService
@@ -12,12 +12,14 @@ public class ProjectService : IProjectService
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
     private readonly IChangeLogService _changeLogService;
+    private readonly IRoleAccessService _roleAccessService;
 
-    public ProjectService(AppDbContext context, IMapper mapper, IChangeLogService changeLogService)
+    public ProjectService(AppDbContext context, IMapper mapper, IChangeLogService changeLogService, IRoleAccessService roleAccessService)
     {
         _context = context;
         _mapper = mapper;
         _changeLogService = changeLogService;
+        _roleAccessService = roleAccessService;
     }
 
     public async Task<List<ProjectDto>> GetMyProjectsAsync(Guid userId)
@@ -29,8 +31,12 @@ public class ProjectService : IProjectService
                 .ThenInclude(pu => pu.User)
             .Include(p => p.CreatedBy)
             .ToListAsync();
-
-        return _mapper.Map<List<ProjectDto>>(projects);
+        var projectDtos = _mapper.Map<List<ProjectDto>>(projects);
+        foreach (var project in projectDtos)
+        {
+            project.Permissions = await _roleAccessService.GetPermissionsForProjectAsync(userId, project.Id);
+        }
+        return projectDtos;
     }
 
     public async Task<bool> AddProjectUserAsync(Guid projectId, AddProjectUserDto dto, Guid currentUserId)
@@ -67,7 +73,9 @@ public class ProjectService : IProjectService
             .FirstOrDefaultAsync(p =>
                 p.Id == projectId &&
                 (p.CreatedById == userId || p.ProjectUsers.Any(pu => pu.UserId == userId))) ?? throw new KeyNotFoundException("Project not found");
-        return project == null ? null : _mapper.Map<ProjectDto>(project);
+        var projectDto = _mapper.Map<ProjectDto>(project);
+        projectDto.Permissions = await _roleAccessService.GetPermissionsForProjectAsync(userId, projectId);
+        return projectDto;
     }
 
     public async Task<ProjectDto?> UpdateProjectAsync(Guid projectId, CreateProjectDto updated, Guid userId)
@@ -93,7 +101,9 @@ public class ProjectService : IProjectService
         foreach (var summary in changes)
             await _changeLogService.LogChange("Project", projectId, userId, summary);
 
-        return _mapper.Map<ProjectDto>(project);
+        var projectDto = _mapper.Map<ProjectDto>(project);
+        projectDto.Permissions = await _roleAccessService.GetPermissionsForProjectAsync(userId, projectId);
+        return projectDto;
     }
 
     public async Task<bool> DeleteProjectAsync(Guid projectId, Guid userId)

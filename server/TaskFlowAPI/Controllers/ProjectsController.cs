@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Interfaces;
+using TaskFlowAPI.Models.Enum;
 
 namespace TaskFlowAPI.Controllers
 {
@@ -33,7 +34,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> AddProjectUser(Guid id, [FromBody] AddProjectUserDto dto)
         {
             var currentUserId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanEditProjectAsync(currentUserId, id))
+            if (!await _roleAccessService.HasPermissionAsync(currentUserId, ProjectPermission.ManageProject, id))
                 throw new UnauthorizedAccessException("You do not have access");
             var success = await _projectService.AddProjectUserAsync(id, dto, currentUserId);
             return Ok("User added to project successfully.");
@@ -43,7 +44,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> GetById(Guid id)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanViewProjectAsync(userId, id))
+            if (!await _roleAccessService.HasPermissionAsync(userId, ProjectPermission.ViewProject, id))
                 throw new UnauthorizedAccessException("You do not have access");
             var project = await _projectService.GetProjectByIdAsync(id, userId);
 
@@ -54,7 +55,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateProjectDto updated)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanEditProjectAsync(userId, id))
+            if (!await _roleAccessService.HasPermissionAsync(userId, ProjectPermission.ManageProject, id))
                 throw new UnauthorizedAccessException("You do not have access");
             var updatedProject = await _projectService.UpdateProjectAsync(id, updated, userId);
             return Ok(updatedProject);
@@ -64,7 +65,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> Delete(Guid id)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanDeleteProjectAsync(userId, id))
+            if (!await _roleAccessService.HasPermissionAsync(userId, ProjectPermission.DeleteProject, id))
                 throw new UnauthorizedAccessException("You do not have access");
             var deleted = await _projectService.DeleteProjectAsync(id, userId);
             return Ok("Project deleted.");
@@ -74,7 +75,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> GetProjectUsers(Guid id)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanViewProjectAsync(userId, id))
+            if (!await _roleAccessService.HasPermissionAsync(userId, ProjectPermission.ViewProject, id))
                 throw new UnauthorizedAccessException("You do not have access");
             var users = await _projectService.GetProjectUsersAsync(id, userId);
             return Ok(users);

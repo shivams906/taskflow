@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Interfaces;
+using TaskFlowAPI.Models.Enum;
 
 namespace TaskFlowAPI.Controllers
 {
@@ -33,7 +34,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> GetById(Guid id)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanViewWorkspaceAsync(userId, id))
+            if (!await _roleAccessService.HasPermissionAsync(userId, WorkspacePermission.ViewWorkspace, id))
                 throw new UnauthorizedAccessException("You do not have access");
             var workspace = await _workspaceService.GetWorkspaceByIdAsync(id, userId);
             return Ok(workspace);
@@ -43,7 +44,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWorkspaceDto updatedWorkspace)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanEditWorkspaceAsync(userId, id))
+            if (!await _roleAccessService.HasPermissionAsync(userId, WorkspacePermission.ManageWorkspace, id))
                 throw new UnauthorizedAccessException("You do not have access");
             var workspace = await _workspaceService.UpdateWorkspaceAsync(id, updatedWorkspace, userId);
             return Ok(workspace);
@@ -61,7 +62,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> Delete(Guid id)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanDeleteWorkspaceAsync(userId, id))
+            if (!await _roleAccessService.HasPermissionAsync(userId, WorkspacePermission.DeleteWorkspace, id))
                 throw new UnauthorizedAccessException("You do not have access");
             await _workspaceService.DeleteWorkspaceAsync(id, userId);
             return Ok("Workspace deleted.");
@@ -79,7 +80,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> GetProjects(Guid workspaceId)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanViewWorkspaceAsync(userId, workspaceId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, WorkspacePermission.ViewWorkspace, workspaceId))
                 throw new UnauthorizedAccessException("You do not have access");
             var projects = await _workspaceService.GetProjectsForWorkspaceAsync(workspaceId, userId);
             return Ok(projects);
@@ -89,7 +90,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> CreateProject(Guid workspaceId, [FromBody] CreateProjectDto dto)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanCreateProjectAsync(userId, workspaceId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, WorkspacePermission.ManageWorkspace, workspaceId))
                 throw new UnauthorizedAccessException("You do not have access");
             var project = await _workspaceService.CreateProjectAsync(workspaceId, dto, userId);
             return Ok(project);
@@ -107,7 +108,7 @@ namespace TaskFlowAPI.Controllers
         public async Task<IActionResult> GetWorkspaceUsers(Guid workspaceId)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
-            if (!await _roleAccessService.CanViewWorkspaceAsync(userId, workspaceId))
+            if (!await _roleAccessService.HasPermissionAsync(userId, WorkspacePermission.ViewWorkspace, workspaceId))
                 throw new UnauthorizedAccessException("You do not have access");
             var users = await _workspaceService.GetWorkspaceUsersAsync(workspaceId);
             return Ok(users);

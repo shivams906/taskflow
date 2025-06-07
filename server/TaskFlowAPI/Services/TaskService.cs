@@ -14,12 +14,14 @@ namespace TaskFlowAPI.Services
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly IChangeLogService _changeLogService;
+        private readonly IRoleAccessService _roleAccessService;
 
-        public TaskService(AppDbContext context, IMapper mapper, IChangeLogService changeLogService)
+        public TaskService(AppDbContext context, IMapper mapper, IChangeLogService changeLogService, IRoleAccessService roleAccessService)
         {
             _context = context;
             _mapper = mapper;
             _changeLogService = changeLogService;
+            _roleAccessService = roleAccessService;
         }
 
         public async Task<List<TaskDto>> GetTasksForProjectAsync(Guid projectId, Guid userId)
@@ -28,16 +30,21 @@ namespace TaskFlowAPI.Services
                 .Include(t => t.AssignedTo)
                 .Include(t => t.CreatedBy)
                 .Where(t => t.ProjectId == projectId)
-                .Select(t => _mapper.Map<TaskDto>(t))
                 .ToListAsync();
-
-            return tasks;
+            var taskDtos = _mapper.Map<List<TaskDto>>(tasks);
+            foreach (var taskDto in taskDtos)
+            {
+                taskDto.Permissions = await _roleAccessService.GetPermissionsForTaskAsync(userId, taskDto.Id);
+            }
+            return taskDtos;
         }
 
         public async Task<TaskDto> GetTaskByIdAsync(Guid taskId, Guid userId)
         {
             var task = await _context.Tasks.Include(t => t.AssignedTo).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
-            return _mapper.Map<TaskDto>(task);
+            var taskDto = _mapper.Map<TaskDto>(task);
+            taskDto.Permissions = await _roleAccessService.GetPermissionsForTaskAsync(userId, taskId);
+            return taskDto;
         }
 
         public async Task<TaskDto> CreateTaskAsync(CreateTaskDto dto, Guid userId)
@@ -53,7 +60,9 @@ namespace TaskFlowAPI.Services
             await _changeLogService.LogChange("Project", dto.ProjectId, userId, $"Task {taskItem.Title} created.");
             await _changeLogService.LogChange("Task", taskItem.Id, userId, $"Task created.");
 
-            return _mapper.Map<TaskDto>(taskItem);
+            var taskDto = _mapper.Map<TaskDto>(taskItem);
+            taskDto.Permissions = await _roleAccessService.GetPermissionsForTaskAsync(userId, taskItem.Id);
+            return taskDto;
         }
 
         public async Task<string> UpdateTaskStatusAsync(Guid taskId, UpdateTaskStatusDto dto, Guid userId)
@@ -132,7 +141,9 @@ namespace TaskFlowAPI.Services
                 await _changeLogService.LogChange("Task", taskId, userId, summary);
             }
 
-            return _mapper.Map<TaskDto>(task);
+            var taskDto = _mapper.Map<TaskDto>(task);
+            taskDto.Permissions = await _roleAccessService.GetPermissionsForTaskAsync(userId, task.Id);
+            return taskDto;
         }
 
         public async Task<string> DeleteTaskAsync(Guid taskId, Guid userId)

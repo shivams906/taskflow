@@ -79,7 +79,10 @@
       <TabPanel>
         <!-- Projects -->
         <div class="p-6">
-          <div class="flex justify-between items-center mb-4">
+          <div
+            v-permission:ManageWorkspace="workspace.permissions"
+            class="flex justify-between items-center mb-4"
+          >
             <router-link
               :to="{ name: 'createProject', params: { workspaceId } }"
               class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
@@ -93,7 +96,6 @@
               <tr>
                 <th class="px-4 py-2 w-2/3 text-left">Name</th>
                 <th class="px-4 py-2">Created By</th>
-                <th class="px-4 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -112,60 +114,6 @@
                 </td>
                 <td class="px-4 py-2 text-center">
                   {{ project.createdByUsername || "N/A" }}
-                </td>
-                <td class="px-4 py-2 space-x-2 text-center">
-                  <Menu as="div" class="relative inline-block text-left">
-                    <div>
-                      <MenuButton
-                        class="inline-flex justify-center w-full p-2 text-sm font-medium text-gray-500 rounded-full hover:bg-gray-200 focus:outline-none"
-                      >
-                        <!-- Three-dot icon -->
-                        <svg
-                          class="w-5 h-5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"
-                          />
-                        </svg>
-                      </MenuButton>
-                    </div>
-
-                    <MenuItems
-                      class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                    >
-                      <div class="py-1">
-                        <MenuItem v-slot="{ active }">
-                          <button
-                            @click="editProject(project.id)"
-                            :class="[
-                              active
-                                ? 'bg-gray-100 text-gray-900'
-                                : 'text-gray-700',
-                              'block w-full text-left px-4 py-2 text-sm',
-                            ]"
-                          >
-                            Edit
-                          </button>
-                        </MenuItem>
-
-                        <MenuItem v-slot="{ active }">
-                          <button
-                            @click="deleteProject(project.id)"
-                            :class="[
-                              active
-                                ? 'bg-gray-100 text-red-600'
-                                : 'text-red-600',
-                              'block w-full text-left px-4 py-2 text-sm',
-                            ]"
-                          >
-                            Delete
-                          </button>
-                        </MenuItem>
-                      </div>
-                    </MenuItems>
-                  </Menu>
                 </td>
               </tr>
               <tr v-if="projects.length === 0">
@@ -189,7 +137,10 @@
             <div class="text-gray-900">{{ workspace.name }}</div>
           </div>
 
-          <div class="space-y-4 text-sm text-gray-800">
+          <div
+            v-permission:ManageWorkspace="workspace.permissions"
+            class="space-y-4 text-sm text-gray-800"
+          >
             <div>
               <label class="font-semibold">Invite Code</label>
               <div class="flex gap-2 items-center">

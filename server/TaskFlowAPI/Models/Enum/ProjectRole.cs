@@ -1,4 +1,4 @@
-﻿namespace TaskFlowAPI.Models.Enums
+﻿namespace TaskFlowAPI.Models.Enum
 {
     public enum ProjectRole
     {

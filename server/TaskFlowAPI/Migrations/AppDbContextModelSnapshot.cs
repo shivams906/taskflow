@@ -54,7 +54,7 @@ namespace TaskFlowAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("TaskFlowAPI.Models.ChangeLog", b =>
@@ -84,7 +84,7 @@ namespace TaskFlowAPI.Migrations
 
                     b.HasIndex("ChangedByUserId");
 
-                    b.ToTable("ChangeLogs");
+                    b.ToTable("ChangeLogs", (string)null);
                 });
 
             modelBuilder.Entity("TaskFlowAPI.Models.Project", b =>
@@ -123,7 +123,7 @@ namespace TaskFlowAPI.Migrations
 
                     b.HasIndex("WorkspaceId");
 
-                    b.ToTable("Projects");
+                    b.ToTable("Projects", (string)null);
                 });
 
             modelBuilder.Entity("TaskFlowAPI.Models.ProjectUser", b =>
@@ -164,7 +164,7 @@ namespace TaskFlowAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ProjectUsers");
+                    b.ToTable("ProjectUsers", (string)null);
                 });
 
             modelBuilder.Entity("TaskFlowAPI.Models.TaskItem", b =>
@@ -212,7 +212,7 @@ namespace TaskFlowAPI.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("Tasks");
+                    b.ToTable("Tasks", (string)null);
                 });
 
             modelBuilder.Entity("TaskFlowAPI.Models.TaskTimeLog", b =>
@@ -255,7 +255,7 @@ namespace TaskFlowAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskTimeLogs");
+                    b.ToTable("TaskTimeLogs", (string)null);
                 });
 
             modelBuilder.Entity("TaskFlowAPI.Models.User", b =>
@@ -298,7 +298,7 @@ namespace TaskFlowAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("TaskFlowAPI.Models.Workspace", b =>
@@ -333,7 +333,7 @@ namespace TaskFlowAPI.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("Workspaces");
+                    b.ToTable("Workspaces", (string)null);
                 });
 
             modelBuilder.Entity("TaskFlowAPI.Models.WorkspaceUser", b =>
@@ -374,7 +374,7 @@ namespace TaskFlowAPI.Migrations
 
                     b.HasIndex("WorkspaceId");
 
-                    b.ToTable("WorkspaceUsers");
+                    b.ToTable("WorkspaceUsers", (string)null);
                 });
 
             modelBuilder.Entity("TaskFlowAPI.Models.AuditLog", b =>

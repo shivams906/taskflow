@@ -11,6 +11,7 @@
         public string CreatedByUsername { get; set; }
         public Guid UpdatedById { get; set; }
         public DateTime UpdatedAtUtc { get; set; }
+        public List<string> Permissions { get; set; } = new List<string>();
     }
 
     public class AdminDto

@@ -1,5 +1,5 @@
 ﻿using TaskFlowAPI.Interfaces;
-using TaskFlowAPI.Models.Enums;
+using TaskFlowAPI.Models.Enum;
 
 namespace TaskFlowAPI.Models
 {

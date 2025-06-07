@@ -6,6 +6,7 @@
     </p>
     <div class="flex space-x-2">
       <router-link
+        v-permission:ManageProject="project.permissions"
         :to="{
           name: 'editProject',
           params: { workspaceId: workspaceId, projectId: project.id },
@@ -15,6 +16,7 @@
         Edit
       </router-link>
       <button
+        v-permission:DeleteProject="project.permissions"
         @click="confirmDelete"
         class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
       >
@@ -100,7 +102,10 @@
           <!-- Header: Project Info and Actions -->
 
           <!-- Tasks Section -->
-          <div class="flex justify-between items-center mb-4">
+          <div
+            v-permission:ManageProject="project.permissions"
+            class="flex justify-between items-center mb-4"
+          >
             <router-link
               :to="{
                 name: 'createTask',
@@ -153,7 +158,6 @@
                 <th class="px-4 py-2">Assigned To</th>
                 <!-- <th class="px-4 py-2">Created By</th> -->
                 <th class="px-4 py-2">Created At</th>
-                <th class="px-4 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -169,6 +173,7 @@
                 </td>
                 <td class="px-4 py-2">
                   <select
+                    v-permission:UpdateTaskStatus.disable="task.permissions"
                     v-model="taskStatusUpdates[task.id]"
                     @change="updateTaskStatus(task.id)"
                     class="border rounded px-2 py-1 text-black w-full"
@@ -180,6 +185,7 @@
                 </td>
                 <td class="px-4 py-2">
                   <select
+                    v-permission:ManageTask.disable="task.permissions"
                     v-model="taskAssignments[task.id]"
                     @change="assignTask(task.id)"
                     class="border rounded px-2 py-1 text-black w-full"
@@ -200,61 +206,6 @@
                 <td class="px-4 py-2 text-center">
                   {{ formatDate(task.createdAtUtc) }}
                 </td>
-
-                <td class="px-4 py-2 space-x-2 text-center">
-                  <Menu as="div" class="relative inline-block text-left">
-                    <div>
-                      <MenuButton
-                        class="inline-flex justify-center w-full p-2 text-sm font-medium text-gray-500 rounded-full hover:bg-gray-200 focus:outline-none"
-                      >
-                        <!-- Three-dot icon -->
-                        <svg
-                          class="w-5 h-5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"
-                          />
-                        </svg>
-                      </MenuButton>
-                    </div>
-
-                    <MenuItems
-                      class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                    >
-                      <div class="py-1">
-                        <MenuItem v-slot="{ active }">
-                          <button
-                            @click="editTask(task.id)"
-                            :class="[
-                              active
-                                ? 'bg-gray-100 text-gray-900'
-                                : 'text-gray-700',
-                              'block w-full text-left px-4 py-2 text-sm',
-                            ]"
-                          >
-                            Edit
-                          </button>
-                        </MenuItem>
-
-                        <MenuItem v-slot="{ active }">
-                          <button
-                            @click="deleteTask(task.id)"
-                            :class="[
-                              active
-                                ? 'bg-gray-100 text-red-600'
-                                : 'text-red-600',
-                              'block w-full text-left px-4 py-2 text-sm',
-                            ]"
-                          >
-                            Delete
-                          </button>
-                        </MenuItem>
-                      </div>
-                    </MenuItems>
-                  </Menu>
-                </td>
               </tr>
               <tr v-if="filteredTasks.length === 0">
                 <td colspan="5" class="px-4 py-4 text-center text-gray-500">
@@ -267,7 +218,7 @@
       </TabPanel>
       <TabPanel> </TabPanel>
       <TabPanel>
-        <div v-if="isAdmin" class="my-4">
+        <div v-permission:ManageProject="project.permissions" class="my-4">
           <h3 class="font-semibold mb-2">Add Member to Project</h3>
           <select
             v-model="selectedUserId"

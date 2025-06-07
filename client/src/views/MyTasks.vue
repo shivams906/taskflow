@@ -68,6 +68,7 @@
           </td>
           <td class="px-4 py-2 text-center">
             <select
+              v-permission:UpdateTaskStatus.disable="task.permissions"
               v-model="taskStatusUpdates[task.id]"
               @change="updateStatus(task.id)"
               class="border rounded px-2 py-1 text-black"

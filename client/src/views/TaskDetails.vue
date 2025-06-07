@@ -6,11 +6,13 @@
     </p>
     <div class="flex space-x-2">
       <router-link
+        v-permission:ManageTask="task.permissions"
         :to="{ name: 'editTask', params: { workspaceId, projectId, taskId } }"
         class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
         >Edit</router-link
       >
       <button
+        v-permission:DeleteTask="task.permissions"
         @click="deleteTask"
         class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
       >
@@ -27,6 +29,7 @@
           >Status</label
         >
         <select
+          v-permission:UpdateTaskStatus.disable="task.permissions"
           v-model="task.status"
           @change="updateTaskStatus(task.id)"
           class="border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -43,6 +46,7 @@
           >Assigned To</label
         >
         <select
+          v-permission:ManageTask.disable="task.permissions"
           v-model="task.assignedToId"
           @change="assignTask(task.id)"
           class="border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"

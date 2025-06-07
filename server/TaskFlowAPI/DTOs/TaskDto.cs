@@ -11,5 +11,6 @@
         public Guid? AssignedToId { get; set; }
         public DateTime CreatedAtUtc { get; set; }
         public Guid CreatedById { get; set; }
+        public List<string> Permissions { get; set; } = new List<string>();
     }
 }

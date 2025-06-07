@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Models;
-using TaskFlowAPI.Models.Enums;
+using TaskFlowAPI.Models.Enum;
 
 namespace TaskFlow.API.Helpers
 {
