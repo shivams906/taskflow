@@ -5,7 +5,6 @@ using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Interfaces;
 using TaskFlowAPI.Models;
 using TaskFlowAPI.Models.Enum;
-using TaskFlowAPI.Models.Enums;
 
 namespace TaskFlowAPI.Services;
 public class WorkspaceService : IWorkspaceService
@@ -27,6 +26,7 @@ public class WorkspaceService : IWorkspaceService
     {
         var workspaceEntities = await _context.Workspaces
             .Include(w => w.WorkspaceUsers)
+            .ThenInclude(wu => wu.User)
             .Where(w => w.WorkspaceUsers.Any(wu => wu.UserId == userId))
             .ToListAsync();
 
@@ -43,6 +43,8 @@ public class WorkspaceService : IWorkspaceService
     public async Task<WorkspaceDto?> GetWorkspaceByIdAsync(Guid workspaceId, Guid userId)
     {
         var workspace = await _context.Workspaces
+            .Include(w => w.WorkspaceUsers)
+            .ThenInclude(wu => wu.User)
             .FirstOrDefaultAsync(w => w.Id == workspaceId) ?? throw new KeyNotFoundException("Workspace not found");
         var workspaceDto = _mapper.Map<WorkspaceDto>(workspace);
         workspaceDto.Permissions = await _roleAccessService.GetPermissionsForWorkspaceAsync(userId, workspaceId);

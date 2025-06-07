@@ -25,13 +25,13 @@ namespace TaskFlowAPI.Data
                 .HasOne(p => p.CreatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.CreatedById)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Workspace>()
                 .HasOne(p => p.UpdatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.UpdatedById)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<WorkspaceUser>()
                 .HasOne(wu => wu.Workspace)
@@ -49,13 +49,13 @@ namespace TaskFlowAPI.Data
                 .HasOne(p => p.CreatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.CreatedById)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<WorkspaceUser>()
                 .HasOne(p => p.UpdatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.UpdatedById)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<WorkspaceUser>()
                 .Property(wu => wu.Role)
@@ -71,13 +71,13 @@ namespace TaskFlowAPI.Data
                 .HasOne(p => p.CreatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.CreatedById)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Project>()
                 .HasOne(p => p.UpdatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.UpdatedById)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<ProjectUser>()
                 .HasOne(pu => pu.Project)
@@ -95,13 +95,13 @@ namespace TaskFlowAPI.Data
                 .HasOne(p => p.CreatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.CreatedById)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<ProjectUser>()
                 .HasOne(p => p.UpdatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.UpdatedById)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<ProjectUser>()
                 .Property(pu => pu.Role)
@@ -111,7 +111,7 @@ namespace TaskFlowAPI.Data
                 .HasOne(t => t.AssignedTo)
                 .WithMany(u => u.AssignedTasks)
                 .HasForeignKey(t => t.AssignedToId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<TaskItem>()
                 .HasOne(t => t.Project)
@@ -123,13 +123,13 @@ namespace TaskFlowAPI.Data
                 .HasOne(p => p.CreatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.CreatedById)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<TaskItem>()
                 .HasOne(p => p.UpdatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.UpdatedById)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<TaskItem>()
                 .Property(t => t.Status)
@@ -143,31 +143,31 @@ namespace TaskFlowAPI.Data
                 .HasOne(tt => tt.User)
                 .WithMany()
                 .HasForeignKey(tt => tt.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<TaskTimeLog>()
                 .HasOne(tt => tt.TaskItem)
                 .WithMany(t => t.TimeLogs)
                 .HasForeignKey(tt => tt.TaskItemId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<TaskTimeLog>()
                 .HasOne(p => p.CreatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.CreatedById)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<TaskTimeLog>()
                 .HasOne(p => p.UpdatedBy)
                 .WithMany()
                 .HasForeignKey(p => p.UpdatedById)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<ChangeLog>()
                 .HasOne(c => c.ChangedByUser)
                 .WithMany()
                 .HasForeignKey(c => c.ChangedByUserId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

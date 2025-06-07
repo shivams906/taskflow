@@ -177,7 +177,23 @@
           </div>
         </div></TabPanel
       >
-      <TabPanel> </TabPanel>
+      <TabPanel>
+        <div class="bg-white p-6 rounded shadow space-y-4 text-gray-800 w-full">
+          <InfoRow
+            label="Created By"
+            :value="task.createdByUsername || 'N/A'"
+          />
+          <InfoRow label="Created On" :value="formatDate(task.createdAtUtc)" />
+          <InfoRow
+            label="Last Updated By"
+            :value="task.updatedByUsername || 'N/A'"
+          />
+          <InfoRow
+            label="Last Updated On"
+            :value="task.updatedAtUtc ? formatDate(task.updatedAtUtc) : 'N/A'"
+          />
+        </div>
+      </TabPanel>
       <TabPanel
         ><ul>
           <li v-for="item in history" :key="item.timestamp">
@@ -207,6 +223,7 @@ import {
 import { fetchProjectUsersFromApi } from "@/api/project";
 import { fetchChangeLogsFromApi } from "@/api/changeLog";
 import { formatDate } from "@/utils/date";
+import InfoRow from "@/components/common/InfoRow.vue";
 const toast = useToast();
 
 const route = useRoute();

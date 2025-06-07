@@ -243,7 +243,28 @@
 
         <MemberList title="Project Members" :members="members" />
       </TabPanel>
-      <TabPanel> </TabPanel>
+      <TabPanel>
+        <div class="bg-white p-6 rounded shadow space-y-4 text-gray-800 w-full">
+          <InfoRow
+            label="Created By"
+            :value="project.createdByUsername || 'N/A'"
+          />
+          <InfoRow
+            label="Created On"
+            :value="formatDate(project.createdAtUtc)"
+          />
+          <InfoRow
+            label="Last Updated By"
+            :value="project.updatedByUsername || 'N/A'"
+          />
+          <InfoRow
+            label="Last Updated On"
+            :value="
+              project.updatedAtUtc ? formatDate(project.updatedAtUtc) : 'N/A'
+            "
+          />
+        </div>
+      </TabPanel>
       <TabPanel
         ><ul>
           <li v-for="item in history" :key="item.timestamp">
@@ -267,6 +288,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
 import { fetchWorkspaceUsersFromApi } from "@/api/workspace";
 import { fetchChangeLogsFromApi } from "@/api/changeLog";
+import InfoRow from "@/components/common/InfoRow.vue";
 import {
   AddProjectUserInApi,
   deleteProjectInApi,
@@ -290,12 +312,7 @@ const router = useRouter();
 const workspaceId = route.params.workspaceId;
 const projectId = route.params.projectId;
 
-const project = ref({
-  id: projectId,
-  title: "",
-  description: "",
-  createdAtUtc: "",
-});
+const project = ref({});
 const history = ref([]);
 const tasks = ref([]);
 const statusOptions = ref([]);

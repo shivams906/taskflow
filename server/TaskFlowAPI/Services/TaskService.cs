@@ -29,6 +29,7 @@ namespace TaskFlowAPI.Services
             var tasks = await _context.Tasks
                 .Include(t => t.AssignedTo)
                 .Include(t => t.CreatedBy)
+                .Include(t => t.UpdatedBy)
                 .Where(t => t.ProjectId == projectId)
                 .ToListAsync();
             var taskDtos = _mapper.Map<List<TaskDto>>(tasks);
@@ -41,7 +42,7 @@ namespace TaskFlowAPI.Services
 
         public async Task<TaskDto> GetTaskByIdAsync(Guid taskId, Guid userId)
         {
-            var task = await _context.Tasks.Include(t => t.AssignedTo).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
+            var task = await _context.Tasks.Include(t => t.AssignedTo).Include(t => t.CreatedBy).Include(t => t.UpdatedBy).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
             var taskDto = _mapper.Map<TaskDto>(task);
             taskDto.Permissions = await _roleAccessService.GetPermissionsForTaskAsync(userId, taskId);
             return taskDto;

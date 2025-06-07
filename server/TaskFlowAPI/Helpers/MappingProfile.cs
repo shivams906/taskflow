@@ -9,18 +9,28 @@ namespace TaskFlow.API.Helpers
     {
         public MappingProfile()
         {
-            CreateMap<Workspace, WorkspaceDto>();
+            CreateMap<Workspace, WorkspaceDto>()
+                .ForMember(dest => dest.CreatedByUsername, opt => opt.MapFrom(src =>
+                    src.CreatedBy.Username))
+                .ForMember(dest => dest.UpdatedByUsername, opt => opt.MapFrom(src =>
+                    src.UpdatedBy.Username));
             CreateMap<CreateWorkspaceDto, Workspace>();
 
             CreateMap<Project, ProjectDto>()
                 .ForMember(dest => dest.CreatedByUsername, opt => opt.MapFrom(src =>
-                    src.CreatedBy.Username));
+                    src.CreatedBy.Username))
+                .ForMember(dest => dest.UpdatedByUsername, opt => opt.MapFrom(src =>
+                    src.UpdatedBy.Username));
 
             CreateMap<CreateProjectDto, Project>();
 
             CreateMap<TaskItem, TaskDto>()
                 .ForMember(dest => dest.ProjectTitle, opt => opt.MapFrom(src => src.Project.Title))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.CreatedByUsername, opt => opt.MapFrom(src =>
+                    src.CreatedBy.Username))
+                .ForMember(dest => dest.UpdatedByUsername, opt => opt.MapFrom(src =>
+                    src.UpdatedBy.Username));
 
             CreateMap<CreateTaskDto, TaskItem>();
 
