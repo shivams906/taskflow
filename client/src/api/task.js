@@ -4,10 +4,11 @@ const authHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
 });
 
-export const fetchTasksByProjectFromApi = async (projectId) => {
+export const fetchTasksByProjectFromApi = async (projectId, queryParams) => {
   try {
     const response = await api.get(`/api/tasks/project/${projectId}`, {
       headers: authHeader(),
+      params: queryParams,
     });
     return response.data;
   } catch (error) {

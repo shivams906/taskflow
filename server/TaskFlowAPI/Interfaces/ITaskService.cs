@@ -1,10 +1,11 @@
 ﻿using TaskFlowAPI.DTOs;
+using TaskFlowAPI.Models;
 
 namespace TaskFlowAPI.Interfaces
 {
     public interface ITaskService
     {
-        Task<List<TaskDto>> GetTasksForProjectAsync(Guid projectId, Guid userId);
+        Task<PagedResult<TaskDto>> GetTasksForProjectAsync(Guid projectId, Guid userId, QueryParams queryParams);
         Task<TaskDto> GetTaskByIdAsync(Guid taskId, Guid userId);
         Task<TaskDto> CreateTaskAsync(CreateTaskDto dto, Guid userId);
         Task<string> UpdateTaskStatusAsync(Guid taskId, UpdateTaskStatusDto dto, Guid userId);

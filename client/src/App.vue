@@ -6,7 +6,9 @@
         <Sidebar />
       </div>
       <main class="main-content">
-        <div v-if="auth.isAuthenticated" class="flex gap-6"><Breadcrumb /></div>
+        <div v-if="auth.isAuthenticated" class="flex gap-6 mb-6">
+          <Breadcrumb />
+        </div>
         <router-view />
       </main>
     </div>

@@ -25,6 +25,7 @@ public class WorkspaceService : IWorkspaceService
     public async Task<List<WorkspaceDto>> GetMyWorkspacesAsync(Guid userId)
     {
         var workspaceEntities = await _context.Workspaces
+            .AsNoTracking()
             .Include(w => w.WorkspaceUsers)
             .ThenInclude(wu => wu.User)
             .Where(w => w.WorkspaceUsers.Any(wu => wu.UserId == userId))
@@ -43,6 +44,7 @@ public class WorkspaceService : IWorkspaceService
     public async Task<WorkspaceDto?> GetWorkspaceByIdAsync(Guid workspaceId, Guid userId)
     {
         var workspace = await _context.Workspaces
+            .AsNoTracking()
             .Include(w => w.WorkspaceUsers)
             .ThenInclude(wu => wu.User)
             .FirstOrDefaultAsync(w => w.Id == workspaceId) ?? throw new KeyNotFoundException("Workspace not found");
@@ -145,6 +147,7 @@ public class WorkspaceService : IWorkspaceService
     public async Task<List<ProjectDto>> GetProjectsForWorkspaceAsync(Guid workspaceId, Guid userId)
     {
         var projects = await _context.Projects
+            .AsNoTracking()
             .Where(p => p.WorkspaceId == workspaceId && (p.CreatedById == userId || p.ProjectUsers.Any(pu => pu.UserId == userId)))
             .Include(p => p.ProjectUsers)
                 .ThenInclude(pu => pu.User)
@@ -193,6 +196,7 @@ public class WorkspaceService : IWorkspaceService
     public async Task<List<TaskDto>> GetMyTasksAsync(Guid workspaceId, Guid userId)
     {
         var tasks = await _context.Tasks
+            .AsNoTracking()
             .Include(t => t.Project)
             .Where(t => t.AssignedToId == userId && t.Project.WorkspaceId == workspaceId)
             .ToListAsync();
@@ -207,6 +211,7 @@ public class WorkspaceService : IWorkspaceService
     public async Task<List<WorkspaceUserDto>> GetWorkspaceUsersAsync(Guid workspaceId)
     {
         return await _context.WorkspaceUsers
+            .AsNoTracking()
             .Include(wu => wu.User)
             .Where(wu => wu.WorkspaceId == workspaceId)
             .Select(wu => _mapper.Map<WorkspaceUserDto>(wu))

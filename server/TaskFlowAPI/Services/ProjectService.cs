@@ -25,6 +25,7 @@ public class ProjectService : IProjectService
     public async Task<List<ProjectDto>> GetMyProjectsAsync(Guid userId)
     {
         var projects = await _context.Projects
+            .AsNoTracking()
             .Where(p => p.CreatedById == userId ||
                         p.ProjectUsers.Any(pu => pu.UserId == userId && pu.Role == ProjectRole.Admin))
             .Include(p => p.ProjectUsers)!
@@ -66,6 +67,7 @@ public class ProjectService : IProjectService
     {
 
         var project = await _context.Projects
+            .AsNoTracking()
             .Include(p => p.ProjectUsers)!
                 .ThenInclude(pu => pu.User)
             .Include(p => p.Tasks)
@@ -128,6 +130,7 @@ public class ProjectService : IProjectService
     public async Task<List<ProjectUserDto>> GetProjectUsersAsync(Guid projectId, Guid userId)
     {
         var users = await _context.ProjectUsers
+            .AsNoTracking()
             .Include(pu => pu.User)
             .Where(pu => pu.ProjectId == projectId)
             .ToListAsync();

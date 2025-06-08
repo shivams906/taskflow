@@ -1,120 +1,132 @@
 <template>
-  <div class="p-6">
-    <h2 class="text-2xl font-bold text-black mb-6">My Tasks</h2>
+  <div class="w-full min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto p-6">
+      <h2 class="text-3xl font-semibold text-gray-900 mb-8">My Tasks</h2>
 
-    <!-- Filters -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-      <input
-        v-model="filters.projectTitle"
-        placeholder="Filter by project"
-        class="px-3 py-2 rounded border text-black"
-      />
-      <input
-        v-model="filters.title"
-        placeholder="Filter by task"
-        class="px-3 py-2 rounded border text-black"
-      />
-      <select
-        v-model="filters.status"
-        class="px-3 py-2 rounded border text-black"
-      >
-        <option value="">All Status</option>
-        <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
-      </select>
-      <!-- <input
-        v-model="filters.startDate"
-        type="date"
-        class="px-3 py-2 rounded border text-black"
-      />
-      <input
-        v-model="filters.endDate"
-        type="date"
-        class="px-3 py-2 rounded border text-black"
-      /> -->
-    </div>
+      <!-- Filters -->
+      <div class="bg-white p-4 rounded-lg shadow-sm flex flex-wrap gap-4 mb-6">
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Project</label
+          >
+          <input
+            v-model="filters.projectTitle"
+            placeholder="Filter by project"
+            class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+          />
+        </div>
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Task</label
+          >
+          <input
+            v-model="filters.title"
+            placeholder="Filter by task"
+            class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+          />
+        </div>
+        <div class="flex-1 min-w-[150px]">
+          <label class="block text-sm font-medium text-gray-700 mb-1"
+            >Status</label
+          >
+          <select
+            v-model="filters.status"
+            class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+          >
+            <option value="">All Status</option>
+            <option v-for="s in statusOptions" :key="s" :value="s">
+              {{ s }}
+            </option>
+          </select>
+        </div>
+      </div>
 
-    <!-- Tasks Table -->
-    <table class="w-full bg-white rounded shadow text-black">
-      <thead class="bg-gray-200">
-        <tr>
-          <th class="px-4 py-2">Project</th>
-          <th class="px-4 py-2">Task</th>
-          <th class="px-4 py-2">Status</th>
-          <th class="px-4 py-2">Timer</th>
-          <th class="px-4 py-2">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="task in filteredTasks"
-          :key="task.id"
-          class="border-t hover:bg-gray-100"
-        >
-          <td class="px-4 py-2 text-center">
-            <button
-              @click="viewProject(task.projectId)"
-              class="hover:underline"
+      <!-- Tasks Table -->
+      <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <table class="w-full text-sm text-gray-900">
+          <thead class="bg-gray-100 text-gray-700">
+            <tr>
+              <th class="px-6 py-3 text-left font-medium">Project</th>
+              <th class="px-6 py-3 text-left font-medium">Task</th>
+              <th class="px-6 py-3 text-left font-medium">Status</th>
+              <th class="px-6 py-3 text-left font-medium">Timer</th>
+              <th class="px-6 py-3 text-left font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="task in filteredTasks"
+              :key="task.id"
+              class="border-t hover:bg-gray-50 transition-colors"
             >
-              {{ task.projectTitle }}
-            </button>
-          </td>
-          <td class="px-4 py-2 text-center">
-            <button
-              @click="viewTask(task.id, task.projectId)"
-              class="hover:underline"
-            >
-              {{ task.title }}
-            </button>
-          </td>
-          <td class="px-4 py-2 text-center">
-            <select
-              v-permission:UpdateTaskStatus.disable="task.permissions"
-              v-model="taskStatusUpdates[task.id]"
-              @change="updateStatus(task.id)"
-              class="border rounded px-2 py-1 text-black"
-            >
-              <option v-for="s in statusOptions" :key="s" :value="s">
-                {{ s }}
-              </option>
-            </select>
-          </td>
-          <td class="px-4 py-2 space-x-2 text-center">
-            <div v-if="activeTimers[task.id]">
-              <button
-                @click="endTimer(task.id)"
-                class="text-red-600 hover:underline"
-              >
-                End
-              </button>
-              <span class="ml-2 text-sm text-gray-400">
-                ({{ formatElapsedTime(elapsedTimers[task.id]) }})
-              </span>
-            </div>
-            <button
-              v-else
-              @click="startTimer(task.id)"
-              class="text-green-600 hover:underline"
-            >
-              Start
-            </button>
-          </td>
-          <td class="px-4 py-2 text-center">
-            <button
-              @click="viewLogs(task.id)"
-              class="text-blue-600 hover:underline text-sm"
-            >
-              View Logs
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div
-      v-if="filteredTasks.length === 0"
-      class="text-center text-gray-400 mt-8"
-    >
-      No tasks found.
+              <td class="px-6 py-4">
+                <button
+                  @click="viewProject(task.projectId)"
+                  class="text-blue-600 hover:underline"
+                >
+                  {{ task.projectTitle }}
+                </button>
+              </td>
+              <td class="px-6 py-4">
+                <button
+                  @click="viewTask(task.id, task.projectId)"
+                  class="text-blue-600 hover:underline"
+                >
+                  {{ task.title }}
+                </button>
+              </td>
+              <td class="px-6 py-4">
+                <select
+                  v-permission:UpdateTaskStatus.disable="task.permissions"
+                  v-model="taskStatusUpdates[task.id]"
+                  @change="updateStatus(task.id)"
+                  class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                >
+                  <option v-for="s in statusOptions" :key="s" :value="s">
+                    {{ s }}
+                  </option>
+                </select>
+              </td>
+              <td class="px-6 py-4 space-x-2">
+                <div
+                  v-if="activeTimers[task.id]"
+                  class="flex items-center space-x-2"
+                >
+                  <button
+                    @click="endTimer(task.id)"
+                    class="text-red-600 hover:underline text-sm"
+                  >
+                    End
+                  </button>
+                  <span class="text-sm text-gray-500">
+                    ({{ formatElapsedTime(elapsedTimers[task.id]) }})
+                  </span>
+                </div>
+                <button
+                  v-else
+                  @click="startTimer(task.id)"
+                  class="text-green-600 hover:underline text-sm"
+                >
+                  Start
+                </button>
+              </td>
+              <td class="px-6 py-4">
+                <button
+                  @click="viewLogs(task.id)"
+                  class="text-blue-600 hover:underline text-sm"
+                >
+                  View Logs
+                </button>
+              </td>
+            </tr>
+            <tr v-if="filteredTasks.length === 0">
+              <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                No tasks found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
@@ -202,7 +214,6 @@ const updateStatus = async (taskId) => {
 // Start timer for a task
 const startTimer = (taskId) => {
   if (runningTaskId.value) {
-    // endTimer(runningTaskId.value); // Stop any running timer
     return toast.error("A timer is already running for another task.");
   }
   runningTaskId.value = taskId;

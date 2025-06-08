@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TaskFlowAPI.DTOs;
 using TaskFlowAPI.Interfaces;
+using TaskFlowAPI.Models;
 using TaskFlowAPI.Models.Enum;
 using TaskFlowAPI.Models.Enums;
 
@@ -24,12 +25,12 @@ namespace TaskFlowAPI.Controllers
         }
 
         [HttpGet("project/{projectId}")]
-        public async Task<IActionResult> GetTasksForProject(Guid projectId)
+        public async Task<IActionResult> GetTasksForProject(Guid projectId, [FromQuery] QueryParams queryParams)
         {
             var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
             if (!await _roleAccessService.HasPermissionAsync(userId, ProjectPermission.ViewProject, projectId))
                 throw new UnauthorizedAccessException("You do not have access");
-            var tasks = await _taskService.GetTasksForProjectAsync(projectId, userId);
+            var tasks = await _taskService.GetTasksForProjectAsync(projectId, userId, queryParams);
             return Ok(tasks);
         }
 

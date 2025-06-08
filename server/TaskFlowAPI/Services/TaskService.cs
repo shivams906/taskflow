@@ -24,25 +24,84 @@ namespace TaskFlowAPI.Services
             _roleAccessService = roleAccessService;
         }
 
-        public async Task<List<TaskDto>> GetTasksForProjectAsync(Guid projectId, Guid userId)
+        public async Task<PagedResult<TaskDto>> GetTasksForProjectAsync(Guid projectId, Guid userId, QueryParams queryParams)
         {
-            var tasks = await _context.Tasks
+            var query = _context.Tasks
+                .AsNoTracking()
                 .Include(t => t.AssignedTo)
                 .Include(t => t.CreatedBy)
                 .Include(t => t.UpdatedBy)
                 .Where(t => t.ProjectId == projectId)
+                .AsQueryable();
+
+            if (queryParams.Filters != null)
+            {
+                foreach (var filter in queryParams.Filters)
+                {
+                    var key = filter.Key.ToLower();
+                    var value = filter.Value;
+
+                    if (string.IsNullOrWhiteSpace(value))
+                        continue;
+
+                    switch (key)
+                    {
+                        case "title":
+                            query = query.Where(t => t.Title.Contains(value));
+                            break;
+
+                        case "assignedtoid":
+                            if (Guid.TryParse(value, out var assignedToId))
+                                query = query.Where(t => t.AssignedToId == assignedToId);
+                            break;
+
+                        case "createdbyid":
+                            if (Guid.TryParse(value, out var createdById))
+                                query = query.Where(t => t.CreatedById == createdById);
+                            break;
+
+                        case "status":
+                            if (Enum.TryParse<TaskItemStatus>(value, true, out var statusEnum))
+                                query = query.Where(t => t.Status == statusEnum);
+                            break;
+
+                            // Add other filters as needed
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(queryParams.SortBy))
+            {
+                query = queryParams.SortDesc
+                    ? query.OrderByDescending(e => EF.Property<object>(e, queryParams.SortBy))
+                    : query.OrderBy(e => EF.Property<object>(e, queryParams.SortBy));
+            }
+
+            var pagedTasks = await query
+                .Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
+                .Take(queryParams.PageSize)
                 .ToListAsync();
-            var taskDtos = _mapper.Map<List<TaskDto>>(tasks);
+
+            var taskDtos = _mapper.Map<List<TaskDto>>(pagedTasks);
             foreach (var taskDto in taskDtos)
             {
                 taskDto.Permissions = await _roleAccessService.GetPermissionsForTaskAsync(userId, taskDto.Id);
             }
-            return taskDtos;
+
+            int totalItems = await query.CountAsync();
+
+            return new PagedResult<TaskDto>
+            {
+                Items = taskDtos,
+                TotalCount = totalItems,
+                PageNumber = queryParams.PageNumber,
+                PageSize = queryParams.PageSize,
+            };
         }
 
         public async Task<TaskDto> GetTaskByIdAsync(Guid taskId, Guid userId)
         {
-            var task = await _context.Tasks.Include(t => t.AssignedTo).Include(t => t.CreatedBy).Include(t => t.UpdatedBy).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
+            var task = await _context.Tasks.AsNoTracking().Include(t => t.AssignedTo).Include(t => t.CreatedBy).Include(t => t.UpdatedBy).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
             var taskDto = _mapper.Map<TaskDto>(task);
             taskDto.Permissions = await _roleAccessService.GetPermissionsForTaskAsync(userId, taskId);
             return taskDto;
@@ -102,7 +161,7 @@ namespace TaskFlowAPI.Services
 
         public async Task<List<TimeLogDto>> GetTimeLogsAsync(Guid taskId, Guid userId, bool onlyMine)
         {
-            var task = await _context.Tasks.Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
+            var task = await _context.Tasks.AsNoTracking().Include(t => t.Project).FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
 
             var logsQuery = _context.TaskTimeLogs.Where(t => t.TaskItemId == taskId);
             if (onlyMine) logsQuery = logsQuery.Where(t => t.UserId == userId);

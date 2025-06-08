@@ -2,43 +2,51 @@
   <div
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
   >
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 text-black">
-      <h2 class="text-2xl font-bold mb-4 text-center">Add Time Log</h2>
+    <div class="bg-white rounded-lg shadow-sm w-full max-w-md p-6">
+      <h2 class="text-2xl font-semibold text-gray-900 mb-6 text-center">
+        Add Time Log
+      </h2>
 
-      <div class="mb-4">
-        <label class="block mb-1 font-semibold">Start Time</label>
-        <input
-          v-model="startTime"
-          type="datetime-local"
-          class="border px-3 py-2 rounded w-full"
-        />
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Start Time
+          </label>
+          <input
+            v-model="startTime"
+            type="datetime-local"
+            class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            End Time
+          </label>
+          <input
+            v-model="endTime"
+            type="datetime-local"
+            class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+          />
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <button
+            @click="$emit('close')"
+            class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            @click="addLog"
+            class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Save
+          </button>
+        </div>
+
+        <div v-if="error" class="text-red-600 text-sm mt-2">{{ error }}</div>
       </div>
-
-      <div class="mb-4">
-        <label class="block mb-1 font-semibold">End Time</label>
-        <input
-          v-model="endTime"
-          type="datetime-local"
-          class="border px-3 py-2 rounded w-full"
-        />
-      </div>
-
-      <div class="flex justify-end gap-4 mt-6">
-        <button
-          @click="$emit('close')"
-          class="px-4 py-2 rounded bg-gray-400 text-white hover:bg-gray-500"
-        >
-          Cancel
-        </button>
-        <button
-          @click="addLog"
-          class="px-4 py-2 rounded bg-green-500 text-white hover:bg-green-600"
-        >
-          Save
-        </button>
-      </div>
-
-      <div v-if="error" class="text-red-600 text-sm mt-2">{{ error }}</div>
     </div>
   </div>
 </template>

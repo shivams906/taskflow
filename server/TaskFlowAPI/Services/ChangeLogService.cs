@@ -36,6 +36,7 @@ namespace TaskFlowAPI.Services
         public async Task<List<ChangeLogDto>> GetChangeLogs(string entityType, Guid entityId)
         {
             return await _context.ChangeLogs
+                .AsNoTracking()
                 .Where(c => c.EntityType.ToLower() == entityType.ToLower() && c.EntityId == entityId)
                 .Include(c => c.ChangedByUser)
                 .OrderByDescending(c => c.Timestamp)

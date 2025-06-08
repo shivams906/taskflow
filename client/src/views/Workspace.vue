@@ -1,210 +1,203 @@
 <template>
-  <div class="flex justify-between items-start mb-6">
-    <h1 class="text-2xl font-bold mb-4">Workspace: {{ workspace.name }}</h1>
-    <div class="flex space-x-2">
-      <router-link
-        v-permission:ManageWorkspace="workspace.permissions"
-        :to="{
-          name: 'editWorkspace',
-          params: { workspaceId: workspaceId },
-        }"
-        class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
+  <div class="w-full min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto p-6">
+      <!-- Header -->
+      <div
+        class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8"
       >
-        Edit
-      </router-link>
-      <button
-        v-permission:DeleteWorkspace="workspace.permissions"
-        @click="confirmDelete"
-        class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
-      >
-        Delete
-      </button>
+        <h1 class="text-3xl font-semibold text-gray-900">
+          Workspace: {{ workspace.name }}
+        </h1>
+        <div class="mt-4 sm:mt-0 flex space-x-3">
+          <router-link
+            v-permission:ManageWorkspace="workspace.permissions"
+            :to="{ name: 'editWorkspace', params: { workspaceId } }"
+            class="inline-flex items-center"
+          >
+            <button
+              class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Edit
+            </button>
+          </router-link>
+          <button
+            v-permission:DeleteWorkspace="workspace.permissions"
+            @click="confirmDelete"
+            class="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <TabGroup :selectedIndex="selectedTab" @change="changeTab">
+        <TabList class="flex space-x-1 bg-white p-1 rounded-lg shadow-sm mb-6">
+          <Tab
+            v-for="tab in [
+              'Dashboard',
+              'Projects',
+              'Discussions',
+              'Members',
+              'About',
+              'History',
+            ]"
+            :key="tab"
+            v-slot="{ selected }"
+          >
+            <span
+              :class="[
+                'px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                selected
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100',
+              ]"
+            >
+              {{ tab }}
+            </span>
+          </Tab>
+        </TabList>
+
+        <TabPanels>
+          <TabPanel>
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+              <p class="text-gray-500 italic">
+                Dashboard content coming soon...
+              </p>
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div class="space-y-6">
+              <div
+                v-permission:ManageWorkspace="workspace.permissions"
+                class="flex justify-end"
+              >
+                <router-link
+                  :to="{ name: 'createProject', params: { workspaceId } }"
+                  class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  + Create Project
+                </router-link>
+              </div>
+              <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <table class="w-full text-sm text-gray-900">
+                  <thead class="bg-gray-100 text-gray-700">
+                    <tr>
+                      <th class="px-6 py-3 text-left font-medium w-2/3">
+                        Name
+                      </th>
+                      <th class="px-6 py-3 text-left font-medium">
+                        Created By
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="project in projects"
+                      :key="project.id"
+                      class="border-t hover:bg-gray-50 transition-colors"
+                    >
+                      <td class="px-6 py-4">
+                        <button
+                          @click="viewProject(project.id)"
+                          class="text-blue-600 hover:underline"
+                        >
+                          {{ project.title }}
+                        </button>
+                      </td>
+                      <td class="px-6 py-4">
+                        {{ project.createdByUsername || "N/A" }}
+                      </td>
+                    </tr>
+                    <tr v-if="projects.length === 0">
+                      <td
+                        colspan="2"
+                        class="px-6 py-4 text-center text-gray-500"
+                      >
+                        No projects found.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+              <p class="text-gray-500 italic">
+                Discussions content coming soon...
+              </p>
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <MemberList
+              :members="members"
+              class="bg-white p-6 rounded-lg shadow-sm"
+            />
+          </TabPanel>
+          <TabPanel>
+            <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+              <InfoRow label="Invite Code">
+                <template #default>
+                  <div class="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      v-model="workspace.inviteCode"
+                      readonly
+                      class="h-9 w-full px-3 rounded-md border border-gray-300 bg-gray-100 text-gray-700 text-sm focus:outline-none"
+                    />
+                    <button
+                      @click="copyInviteCode"
+                      class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </template>
+              </InfoRow>
+              <InfoRow
+                label="Created By"
+                :value="workspace.createdByUsername || 'N/A'"
+              />
+              <InfoRow
+                label="Created On"
+                :value="formatDate(workspace.createdAtUtc)"
+              />
+              <InfoRow
+                label="Last Updated By"
+                :value="workspace.updatedByUsername || 'N/A'"
+              />
+              <InfoRow
+                label="Last Updated On"
+                :value="
+                  workspace.updatedAtUtc
+                    ? formatDate(workspace.updatedAtUtc)
+                    : 'N/A'
+                "
+              />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+              <ul class="space-y-2">
+                <li
+                  v-for="item in history"
+                  :key="item.timestamp"
+                  class="text-sm text-gray-700"
+                >
+                  {{ formatDate(item.timestamp) }} - {{ item.changeSummary }} by
+                  {{ item.changedByUserName }}
+                </li>
+                <li v-if="!history.length" class="text-gray-500 italic">
+                  No history available.
+                </li>
+              </ul>
+            </div>
+          </TabPanel>
+        </TabPanels>
+      </TabGroup>
     </div>
   </div>
-  <TabGroup :selectedIndex="selectedTab" @change="changeTab">
-    <TabList class="flex space-x-4">
-      <Tab v-slot="{ selected }">
-        <span
-          :class="
-            selected
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          "
-        >
-          Dashboard
-        </span>
-      </Tab>
-
-      <Tab v-slot="{ selected }">
-        <span
-          :class="
-            selected
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          "
-        >
-          Projects
-        </span>
-      </Tab>
-      <Tab v-slot="{ selected }">
-        <span
-          :class="
-            selected
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          "
-        >
-          Discussions
-        </span>
-      </Tab>
-      <Tab v-slot="{ selected }">
-        <span
-          :class="
-            selected
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          "
-        >
-          Members
-        </span>
-      </Tab>
-      <Tab v-slot="{ selected }">
-        <span
-          :class="
-            selected
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          "
-        >
-          About
-        </span>
-      </Tab>
-      <Tab v-slot="{ selected }">
-        <span
-          :class="
-            selected
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          "
-        >
-          History
-        </span>
-      </Tab>
-    </TabList>
-
-    <TabPanels class="mt-4">
-      <TabPanel>
-        <!-- Dashboard Content -->
-        <!-- <DashboardPanel /> -->
-      </TabPanel>
-      <TabPanel>
-        <!-- Projects -->
-        <div class="p-6">
-          <div
-            v-permission:ManageWorkspace="workspace.permissions"
-            class="flex justify-between items-center mb-4"
-          >
-            <router-link
-              :to="{ name: 'createProject', params: { workspaceId } }"
-              class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
-            >
-              + Create Project
-            </router-link>
-          </div>
-          <!-- Projects Table -->
-          <table class="w-full bg-white rounded shadow text-black">
-            <thead class="bg-gray-200">
-              <tr>
-                <th class="px-4 py-2 w-2/3 text-left">Name</th>
-                <th class="px-4 py-2">Created By</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="project in projects"
-                :key="project.id"
-                class="border-t hover:bg-gray-100"
-              >
-                <td class="px-4 py-2 text-left">
-                  <button
-                    @click="viewProject(project.id)"
-                    class="hover:underline"
-                  >
-                    {{ project.title }}
-                  </button>
-                </td>
-                <td class="px-4 py-2 text-center">
-                  {{ project.createdByUsername || "N/A" }}
-                </td>
-              </tr>
-              <tr v-if="projects.length === 0">
-                <td colspan="5" class="px-4 py-4 text-center text-gray-500">
-                  No projects found.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </TabPanel>
-      <TabPanel></TabPanel>
-      <TabPanel>
-        <!-- Members -->
-        <MemberList :members="members" />
-      </TabPanel>
-      <TabPanel>
-        <div class="bg-white p-6 rounded shadow space-y-4 text-gray-800 w-full">
-          <InfoRow label="Invite Code">
-            <template #default>
-              <div class="flex gap-2 items-center">
-                <input
-                  type="text"
-                  v-model="workspace.inviteCode"
-                  readonly
-                  class="border border-gray-300 rounded px-2 py-1 w-full bg-gray-100 text-gray-700"
-                />
-                <button
-                  @click="copyInviteCode"
-                  class="bg-blue-600 text-white text-sm px-3 py-1 rounded hover:bg-blue-700"
-                >
-                  Copy
-                </button>
-              </div>
-            </template>
-          </InfoRow>
-
-          <InfoRow
-            label="Created By"
-            :value="workspace.createdByUsername || 'N/A'"
-          />
-          <InfoRow
-            label="Created On"
-            :value="formatDate(workspace.createdAtUtc)"
-          />
-          <InfoRow
-            label="Last Updated By"
-            :value="workspace.updatedByUsername || 'N/A'"
-          />
-          <InfoRow
-            label="Last Updated On"
-            :value="
-              workspace.updatedAtUtc
-                ? formatDate(workspace.updatedAtUtc)
-                : 'N/A'
-            "
-          />
-        </div>
-      </TabPanel>
-
-      <TabPanel>
-        <ul>
-          <li v-for="item in history" :key="item.timestamp">
-            {{ formatDate(item.timestamp) }} - {{ item.changeSummary }} by
-            {{ item.changedByUserName }}
-          </li>
-        </ul>
-      </TabPanel>
-    </TabPanels>
-  </TabGroup>
 </template>
 
 <script setup>
@@ -215,7 +208,6 @@ import { ref, onMounted, watch, watchEffect } from "vue";
 import { useToast } from "vue-toastification";
 import MemberList from "@/components/common/MemberList.vue";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
-import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
 import { fetchChangeLogsFromApi } from "@/api/changeLog";
 import InfoRow from "@/components/common/InfoRow.vue";
 import {
@@ -367,7 +359,3 @@ const confirmDelete = async () => {
   }
 };
 </script>
-
-<style scoped>
-/* Optional: improve tab UX */
-</style>

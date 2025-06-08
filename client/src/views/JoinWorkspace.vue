@@ -1,17 +1,25 @@
 <template>
-  <div class="max-w-md mx-auto mt-10 p-4 border rounded shadow">
-    <h2 class="text-xl font-bold mb-4">Join a Workspace</h2>
-    <input
-      v-model="inviteCode"
-      placeholder="Enter invite code"
-      class="w-full border px-3 py-2 rounded mb-4"
-    />
-    <button
-      @click="joinWorkspace"
-      class="bg-green-600 text-white px-4 py-2 rounded"
-    >
-      Join
-    </button>
+  <div class="w-full min-h-screen bg-gray-50">
+    <div class="max-w-md mx-auto p-6">
+      <div class="bg-white p-6 rounded-lg shadow-sm">
+        <h2 class="text-3xl font-semibold text-gray-900 mb-6">
+          Join a Workspace
+        </h2>
+        <input
+          v-model="inviteCode"
+          placeholder="Enter invite code"
+          class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 mb-4"
+        />
+        <div class="flex justify-end">
+          <button
+            @click="joinWorkspace"
+            class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Join
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

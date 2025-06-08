@@ -1,210 +1,239 @@
 <template>
-  <h1 class="text-2xl font-bold mb-4">Task: {{ task.title }}</h1>
-  <div class="flex justify-between items-start mb-6">
-    <p class="text-gray-300 mt-1">
-      {{ task.description || "No description" }}
-    </p>
-    <div class="flex space-x-2">
-      <router-link
-        v-permission:ManageTask="task.permissions"
-        :to="{ name: 'editTask', params: { workspaceId, projectId, taskId } }"
-        class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
-        >Edit</router-link
+  <div class="w-full min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto p-6">
+      <!-- Header -->
+      <div
+        class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8"
       >
-      <button
-        v-permission:DeleteTask="task.permissions"
-        @click="deleteTask"
-        class="bg-white text-black px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
-      >
-        Delete
-      </button>
-    </div>
-  </div>
-  <!-- Task Info Section -->
-  <div class="bg-white p-4 rounded-lg shadow mb-6 text-black">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- Status -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1"
-          >Status</label
-        >
-        <select
-          v-permission:UpdateTaskStatus.disable="task.permissions"
-          v-model="task.status"
-          @change="updateTaskStatus(task.id)"
-          class="border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option v-for="s in statusOptions" :key="s" :value="s">
-            {{ s }}
-          </option>
-        </select>
+        <div>
+          <h1 class="text-3xl font-semibold text-gray-900">
+            Task: {{ task.title }}
+          </h1>
+          <p class="mt-2 text-gray-600 text-sm">
+            {{ task.description || "No description available" }}
+          </p>
+        </div>
+        <div class="mt-4 sm:mt-0 flex space-x-3">
+          <router-link
+            v-permission:ManageTask="task.permissions"
+            :to="{
+              name: 'editTask',
+              params: { workspaceId, projectId, taskId },
+            }"
+            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Edit
+          </router-link>
+          <button
+            v-permission:DeleteTask="task.permissions"
+            @click="deleteTask"
+            class="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
-      <!-- Assigned To -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1"
-          >Assigned To</label
-        >
-        <select
-          v-permission:ManageTask.disable="task.permissions"
-          v-model="task.assignedToId"
-          @change="assignTask(task.id)"
-          class="border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option v-for="u in users" :key="u.userId" :value="u.userId">
-            {{ u.username }}
-          </option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <TabGroup :selectedIndex="selectedTab" @change="changeTab">
-    <TabList class="flex space-x-4">
-      <Tab v-slot="{ selected }">
-        <span
-          :class="
-            selected
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          "
-        >
-          Discussions
-        </span>
-      </Tab>
-
-      <Tab v-slot="{ selected }">
-        <span
-          :class="
-            selected
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          "
-        >
-          Logs
-        </span>
-      </Tab>
-      <Tab v-slot="{ selected }">
-        <span
-          :class="
-            selected
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          "
-        >
-          About
-        </span>
-      </Tab>
-      <Tab v-slot="{ selected }">
-        <span
-          :class="
-            selected
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600'
-          "
-        >
-          History
-        </span>
-      </Tab>
-    </TabList>
-
-    <TabPanels class="mt-4">
-      <TabPanel> </TabPanel>
-      <TabPanel>
-        <div class="p-6 mx-auto text-black">
-          <!-- Filters -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <select
-              v-if="showUserFilter"
-              v-model="filters.userId"
-              class="px-3 py-2 rounded border text-black"
+      <!-- Task Info Section -->
+      <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Status</label
             >
-              <option value="">All Users</option>
-              <option v-for="user in users" :key="user.id" :value="user.id">
-                {{ user.username }}
+            <select
+              v-permission:UpdateTaskStatus.disable="task.permissions"
+              v-model="task.status"
+              @change="updateTaskStatus(task.id)"
+              class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+            >
+              <option v-for="s in statusOptions" :key="s" :value="s">
+                {{ s }}
               </option>
             </select>
-
-            <input
-              v-model="filters.startDate"
-              type="date"
-              class="px-3 py-2 rounded border text-black"
-            />
-            <input
-              v-model="filters.endDate"
-              type="date"
-              class="px-3 py-2 rounded border text-black"
-            />
           </div>
-
-          <!-- Logs Table -->
-          <table
-            class="w-full text-left bg-white rounded overflow-hidden shadow text-black"
-          >
-            <thead class="bg-gray-200">
-              <tr>
-                <th class="px-4 py-2">User</th>
-                <th class="px-4 py-2">Start Time</th>
-                <th class="px-4 py-2">End Time</th>
-                <th class="px-4 py-2">Duration (min)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="log in filteredLogs"
-                :key="log.id"
-                class="border-t hover:bg-gray-100"
-              >
-                <td class="px-4 py-2">{{ log.username }}</td>
-                <td class="px-4 py-2">{{ formatDate(log.startTime) }}</td>
-                <td class="px-4 py-2">{{ formatDate(log.endTime) }}</td>
-                <td class="px-4 py-2">
-                  {{ calculateMinutes(log.startTime, log.endTime) }}
-                </td>
-              </tr>
-
-              <tr v-if="filteredLogs.length === 0">
-                <td colspan="4" class="px-4 py-4 text-center text-gray-500">
-                  No logs found.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-
-          <!-- Total -->
-          <div class="mt-4 text-right font-semibold text-black">
-            Total Time: {{ totalTime }} minutes
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Assigned To</label
+            >
+            <select
+              v-permission:ManageTask.disable="task.permissions"
+              v-model="task.assignedToId"
+              @change="assignTask(task.id)"
+              class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+            >
+              <option v-for="u in users" :key="u.userId" :value="u.userId">
+                {{ u.username }}
+              </option>
+            </select>
           </div>
-        </div></TabPanel
-      >
-      <TabPanel>
-        <div class="bg-white p-6 rounded shadow space-y-4 text-gray-800 w-full">
-          <InfoRow
-            label="Created By"
-            :value="task.createdByUsername || 'N/A'"
-          />
-          <InfoRow label="Created On" :value="formatDate(task.createdAtUtc)" />
-          <InfoRow
-            label="Last Updated By"
-            :value="task.updatedByUsername || 'N/A'"
-          />
-          <InfoRow
-            label="Last Updated On"
-            :value="task.updatedAtUtc ? formatDate(task.updatedAtUtc) : 'N/A'"
-          />
         </div>
-      </TabPanel>
-      <TabPanel
-        ><ul>
-          <li v-for="item in history" :key="item.timestamp">
-            {{ formatDate(item.timestamp) }} - {{ item.changeSummary }} by
-            {{ item.changedByUserName }}
-          </li>
-        </ul>
-      </TabPanel>
-    </TabPanels>
-  </TabGroup>
+      </div>
+
+      <!-- Tabs -->
+      <TabGroup :selectedIndex="selectedTab" @change="changeTab">
+        <TabList class="flex space-x-1 bg-white p-1 rounded-lg shadow-sm mb-6">
+          <Tab
+            v-for="tab in ['Discussions', 'Logs', 'About', 'History']"
+            :key="tab"
+            v-slot="{ selected }"
+          >
+            <span
+              :class="[
+                'px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                selected
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100',
+              ]"
+            >
+              {{ tab }}
+            </span>
+          </Tab>
+        </TabList>
+
+        <TabPanels>
+          <TabPanel>
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+              <p class="text-gray-500 italic">
+                Discussions content coming soon...
+              </p>
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <!-- Logs Section -->
+            <div class="space-y-6">
+              <div
+                class="bg-white p-4 rounded-lg shadow-sm flex flex-wrap gap-4"
+              >
+                <div v-if="showUserFilter" class="flex-1 min-w-[150px]">
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >User</label
+                  >
+                  <select
+                    v-model="filters.userId"
+                    class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  >
+                    <option value="">All Users</option>
+                    <option
+                      v-for="user in users"
+                      :key="user.id"
+                      :value="user.id"
+                    >
+                      {{ user.username }}
+                    </option>
+                  </select>
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Start Date</label
+                  >
+                  <input
+                    v-model="filters.startDate"
+                    type="date"
+                    class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  />
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >End Date</label
+                  >
+                  <input
+                    v-model="filters.endDate"
+                    type="date"
+                    class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  />
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <table class="w-full text-sm text-gray-900">
+                  <thead class="bg-gray-100 text-gray-700">
+                    <tr>
+                      <th class="px-6 py-3 text-left font-medium">User</th>
+                      <th class="px-6 py-3 text-left font-medium">
+                        Start Time
+                      </th>
+                      <th class="px-6 py-3 text-left font-medium">End Time</th>
+                      <th class="px-6 py-3 text-left font-medium">
+                        Duration (min)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="log in filteredLogs"
+                      :key="log.id"
+                      class="border-t hover:bg-gray-50 transition-colors"
+                    >
+                      <td class="px-6 py-4">{{ log.username }}</td>
+                      <td class="px-6 py-4">{{ formatDate(log.startTime) }}</td>
+                      <td class="px-6 py-4">{{ formatDate(log.endTime) }}</td>
+                      <td class="px-6 py-4">
+                        {{ calculateMinutes(log.startTime, log.endTime) }}
+                      </td>
+                    </tr>
+                    <tr v-if="filteredLogs.length === 0">
+                      <td
+                        colspan="4"
+                        class="px-6 py-4 text-center text-gray-500"
+                      >
+                        No logs found.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div
+                  class="px-6 py-4 bg-gray-50 border-t text-sm text-gray-900 font-semibold text-right"
+                >
+                  Total Time: {{ totalTime }} minutes
+                </div>
+              </div>
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+              <InfoRow
+                label="Created By"
+                :value="task.createdByUsername || 'N/A'"
+              />
+              <InfoRow
+                label="Created On"
+                :value="formatDate(task.createdAtUtc)"
+              />
+              <InfoRow
+                label="Last Updated By"
+                :value="task.updatedByUsername || 'N/A'"
+              />
+              <InfoRow
+                label="Last Updated On"
+                :value="
+                  task.updatedAtUtc ? formatDate(task.updatedAtUtc) : 'N/A'
+                "
+              />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+              <ul class="space-y-2">
+                <li
+                  v-for="item in history"
+                  :key="item.timestamp"
+                  class="text-sm text-gray-700"
+                >
+                  {{ formatDate(item.timestamp) }} - {{ item.changeSummary }} by
+                  {{ item.changedByUserName }}
+                </li>
+                <li v-if="!history.length" class="text-gray-500 italic">
+                  No history available.
+                </li>
+              </ul>
+            </div>
+          </TabPanel>
+        </TabPanels>
+      </TabGroup>
+    </div>
+  </div>
 </template>
+
 <script setup>
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@headlessui/vue";
 import { ref, computed, onMounted, watch, watchEffect } from "vue";
@@ -339,7 +368,6 @@ const deleteTask = async () => {
   if (!confirm("Delete this task?")) return;
   await deleteTaskFromApi(taskId);
   toast.success("Task deleted successfully!");
-  // after delete, go back to project detail
   router.push(`/admin/projects/${projectId}`);
 };
 
