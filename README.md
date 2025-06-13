@@ -6,7 +6,7 @@
 
 ## ✨ Features
 
-### 🔧 Backend – ASP.NET Core 8
+### 🔧 Backend – ASP.NET Core 9
 
 - 🔐 **Authentication & Authorization**  
   JWT-based authentication with role-based access control (`Creator`, `Admin`, `Assigned User`).
@@ -54,6 +54,6 @@
 
 | Layer     | Stack                          |
 |-----------|--------------------------------|
-| Backend   | ASP.NET Core 8, EF Core, JWT   |
+| Backend   | ASP.NET Core 9, EF Core, JWT   |
 | Frontend  | Vue 3, TailwindCSS, Vite       |
 | Database  | SQL Server |
