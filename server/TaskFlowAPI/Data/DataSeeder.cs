@@ -24,9 +24,10 @@ namespace TaskFlowAPI.Data
                 string username;
                 do
                 {
-                    var baseName = faker.Name.FirstName().Replace(" ", "").Replace(".", "").Replace("-", "").ToLower();
-                    var number = faker.Random.Number(1000, 9999); // 4-digit number
-                    username = $"{baseName}{number}";
+                    //var baseName = faker.Name.FirstName().Replace(" ", "").Replace(".", "").Replace("-", "").ToLower();
+                    //var number = faker.Random.Number(1000, 9999); // 4-digit number
+                    //username = $"{baseName}{number}";
+                    username = $"demo{i + 1}";
                 } while (!usedUsernames.Add(username)); // Ensures uniqueness
 
                 var user = new User

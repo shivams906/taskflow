@@ -34,8 +34,7 @@ builder.Services.AddScoped<AuditSaveChangesInterceptor>();
 builder.Services.AddDbContext<AppDbContext>((provider, options) =>
     {
         var interceptor = provider.GetRequiredService<AuditSaveChangesInterceptor>();
-        //options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-        options.UseSqlite("Data Source=taskflow.db")
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
         .AddInterceptors(interceptor);
     });
 
