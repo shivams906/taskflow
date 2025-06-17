@@ -72,6 +72,7 @@ public class ProjectService : IProjectService
                 .ThenInclude(pu => pu.User)
             .Include(p => p.Tasks)
             .Include(p => p.CreatedBy)
+            .Include(p => p.UpdatedBy)
             .FirstOrDefaultAsync(p =>
                 p.Id == projectId &&
                 (p.CreatedById == userId || p.ProjectUsers.Any(pu => pu.UserId == userId))) ?? throw new KeyNotFoundException("Project not found");

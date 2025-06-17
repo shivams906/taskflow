@@ -47,6 +47,8 @@ public class WorkspaceService : IWorkspaceService
             .AsNoTracking()
             .Include(w => w.WorkspaceUsers)
             .ThenInclude(wu => wu.User)
+            .Include(w => w.CreatedBy)
+            .Include(w => w.UpdatedBy)
             .FirstOrDefaultAsync(w => w.Id == workspaceId) ?? throw new KeyNotFoundException("Workspace not found");
         var workspaceDto = _mapper.Map<WorkspaceDto>(workspace);
         workspaceDto.Permissions = await _roleAccessService.GetPermissionsForWorkspaceAsync(userId, workspaceId);

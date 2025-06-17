@@ -311,9 +311,9 @@ watch(
       await fetchWorkspace();
       await fetchProjects();
       await fetchWorkspaceMembers();
+      await loadHistory();
     }
-  },
-  { immediate: true }
+  }
 );
 
 const loadHistory = async () => {
@@ -326,6 +326,9 @@ onMounted(() => {
       query: { ...route.query, tab: tabNames[0] },
     });
   }
+  fetchWorkspace();
+  fetchProjects();
+  fetchWorkspaceMembers();
   loadHistory();
 });
 
