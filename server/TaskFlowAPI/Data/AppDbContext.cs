@@ -16,6 +16,7 @@ namespace TaskFlowAPI.Data
         public DbSet<Workspace> Workspaces => Set<Workspace>();
         public DbSet<WorkspaceUser> WorkspaceUsers => Set<WorkspaceUser>();
         public DbSet<ChangeLog> ChangeLogs => Set<ChangeLog>();
+        public DbSet<Comment> Comments => Set<Comment>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -134,6 +135,18 @@ namespace TaskFlowAPI.Data
             modelBuilder.Entity<TaskItem>()
                 .Property(t => t.Status)
                 .HasConversion<string>();
+
+            modelBuilder.Entity<Comment>()
+                .HasOne(c => c.Task)
+                .WithMany(t => t.Comments)
+                .HasForeignKey(c => c.TaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Comment>()
+                .HasOne(c => c.CreatedBy)
+                .WithMany()
+                .HasForeignKey(c => c.CreatedById)
+                .OnDelete(DeleteBehavior.ClientSetNull);
 
             modelBuilder.Entity<AuditLog>()
                 .Property(a => a.AuditType)

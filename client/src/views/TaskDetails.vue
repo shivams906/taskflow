@@ -93,10 +93,124 @@
 
         <TabPanels>
           <TabPanel>
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-              <p class="text-gray-500 italic">
-                Discussions content coming soon...
-              </p>
+            <!-- Discussions Section -->
+            <div class="bg-white p-6 rounded-lg shadow-sm space-y-6">
+              <!-- Comment Form -->
+              <div
+                v-permission:ViewTask="task.permissions"
+                class="flex flex-col gap-4"
+              >
+                <textarea
+                  v-model="newComment"
+                  placeholder="Add a comment..."
+                  class="w-full h-24 p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 resize-none"
+                ></textarea>
+                <button
+                  @click="postComment"
+                  :disabled="!newComment.trim()"
+                  class="self-end px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  Post Comment
+                </button>
+              </div>
+              <!-- Comment Filters -->
+              <div
+                class="bg-white p-4 rounded-lg shadow-sm flex flex-wrap gap-4 items-end"
+              >
+                <div class="flex-1 min-w-[150px]">
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Created By</label
+                  >
+                  <select
+                    v-model="commentFilters.createdById"
+                    class="h-9 w-full px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  >
+                    <option value="">All Users</option>
+                    <option
+                      v-for="user in users"
+                      :key="user.userId"
+                      :value="user.userId"
+                    >
+                      {{ user.username }}
+                    </option>
+                  </select>
+                </div>
+                <!-- Sort Controls -->
+                <div class="flex-1 min-w-[150px]">
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Sort By</label
+                  >
+                  <div class="flex items-center gap-2">
+                    <select
+                      v-model="sortBy"
+                      class="h-9 flex-1 px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                    >
+                      <option value="CreatedAtUtc">Created At</option>
+                    </select>
+                    <button
+                      @click="sortDesc = !sortDesc"
+                      class="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      aria-label="Toggle sort direction"
+                    >
+                      <span class="text-sm text-gray-600">{{
+                        sortDesc ? "↓" : "↑"
+                      }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Comment List -->
+              <div class="space-y-4">
+                <div
+                  v-for="comment in comments"
+                  :key="comment.id"
+                  class="border-l-2 border-blue-200 pl-4 py-2"
+                >
+                  <p class="text-sm text-gray-900">{{ comment.content }}</p>
+                  <p class="text-xs text-gray-500 mt-1">
+                    {{ comment.createdByUsername }} •
+                    {{ formatDate(comment.createdAtUtc) }}
+                  </p>
+                </div>
+                <p v-if="!comments.length" class="text-gray-500 italic text-sm">
+                  No comments yet.
+                </p>
+              </div>
+              <!-- Pagination -->
+              <div
+                v-if="totalCount > pageSize"
+                class="flex justify-between items-center px-6 py-4 bg-gray-50 border-t"
+              >
+                <button
+                  @click="currentPage--"
+                  :disabled="currentPage === 1"
+                  class="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                >
+                  Previous
+                </button>
+                <div class="space-x-2">
+                  <button
+                    v-for="page in totalCommentPages"
+                    :key="page"
+                    @click="currentPage = page"
+                    :class="[
+                      'px-3 py-1 text-sm rounded-lg',
+                      page === currentPage
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-gray-300 hover:bg-gray-100',
+                    ]"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+                <button
+                  @click="currentPage++"
+                  :disabled="currentPage === totalCommentPages"
+                  class="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </TabPanel>
           <TabPanel>
@@ -236,7 +350,7 @@
 
 <script setup>
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@headlessui/vue";
-import { ref, computed, onMounted, watch, watchEffect } from "vue";
+import { ref, computed, onMounted, watch, watchEffect, reactive } from "vue";
 import api from "@/api/axios";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "vue-toastification";
@@ -248,11 +362,14 @@ import {
   deleteTaskFromApi,
   fetchTaskStatusOptionsFromApi,
   fetchTaskByIdFromApi,
+  fetchCommentsByTaskFromApi,
+  postCommentToApi,
 } from "@/api/task";
 import { fetchProjectUsersFromApi } from "@/api/project";
 import { fetchChangeLogsFromApi } from "@/api/changeLog";
 import { formatDate } from "@/utils/date";
 import InfoRow from "@/components/common/InfoRow.vue";
+import { useDebounceFn } from "@/composables/useDebounceFn";
 const toast = useToast();
 
 const route = useRoute();
@@ -272,12 +389,67 @@ const task = ref({
   assignedToId: "",
 });
 
+const comments = ref({
+  items: [],
+  totalCount: 0,
+  pageNumber: 1,
+  pageSize: 10,
+});
+const newComment = ref("");
+const commentFilters = reactive({
+  createdById: "",
+});
+
+const sortBy = ref("CreatedAtUtc");
+const sortDesc = ref(true);
+const totalCount = ref(0);
+const currentPage = ref(1);
+const pageSize = ref(10);
+
+const totalCommentPages = computed(() =>
+  Math.ceil(totalCount.value / pageSize.value)
+);
+const fetchComments = async () => {
+  const queryParams = {
+    pageNumber: currentPage.value,
+    pageSize: pageSize.value,
+    filters: {
+      ...(commentFilters.createdById && {
+        createdById: commentFilters.createdById,
+      }),
+    },
+    sortBy: sortBy.value || "CreatedAtUtc",
+    sortDesc: sortDesc.value,
+  };
+  try {
+    const data = await fetchCommentsByTaskFromApi(taskId, queryParams);
+    console.log(data);
+    comments.value = data.items;
+    totalCount.value = data.totalCount;
+  } catch (err) {
+    console.error("Failed to fetch comments", err);
+  }
+};
+const { debounced: debouncedFetchComments } = useDebounceFn(fetchComments, 500);
+
+watch(
+  [commentFilters, sortBy, sortDesc],
+  () => {
+    currentPage.value = 1;
+    debouncedFetchComments();
+  },
+  { deep: true }
+);
+
+watch(currentPage, fetchComments);
+
 const fetchStatusOptions = async () => {
   statusOptions.value = await fetchTaskStatusOptionsFromApi();
 };
 const fetchTask = async () => {
   task.value = await fetchTaskByIdFromApi(taskId);
 };
+
 const history = ref([]);
 const logs = ref([]);
 const users = ref([]);
@@ -371,6 +543,18 @@ const deleteTask = async () => {
   router.push(`/admin/projects/${projectId}`);
 };
 
+const postComment = async () => {
+  if (!newComment.value.trim()) return;
+  try {
+    await postCommentToApi(taskId, newComment.value);
+    newComment.value = "";
+    await debouncedFetchComments();
+    toast.success("Comment posted successfully!");
+  } catch (err) {
+    toast.error("Failed to post comment.");
+  }
+};
+
 const updateTaskStatus = async (taskId) => {
   const newStatus = task.value.status;
   await updateTaskStatusInApi(taskId, newStatus);
@@ -398,6 +582,7 @@ onMounted(() => {
   fetchLogs();
   fetchUsers();
   loadHistory();
+  debouncedFetchComments();
 
   if (!route.query.tab) {
     router.replace({

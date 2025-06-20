@@ -247,5 +247,86 @@ namespace TaskFlowAPI.Services
 
             return "Task unassigned.";
         }
+
+        public async Task<PagedResult<CommentDto>> GetCommentsForTaskAsync(Guid taskId, Guid userId, QueryParams queryParams)
+        {
+            var query = _context.Comments
+                .AsNoTracking()
+                .Include(c => c.CreatedBy)
+                .Where(c => c.TaskId == taskId)
+                .AsQueryable();
+
+            // Apply filters
+            if (queryParams.Filters != null)
+            {
+                foreach (var filter in queryParams.Filters)
+                {
+                    var key = filter.Key.ToLower();
+                    var value = filter.Value;
+
+                    if (string.IsNullOrWhiteSpace(value))
+                        continue;
+
+                    switch (key)
+                    {
+                        case "createdbyid":
+                            if (Guid.TryParse(value, out var createdById))
+                                query = query.Where(c => c.CreatedById == createdById);
+                            break;
+                        case "content":
+                            query = query.Where(c => c.Content.Contains(value));
+                            break;
+                            // Add other filters as needed
+                    }
+                }
+            }
+
+            // Apply sorting
+            if (!string.IsNullOrEmpty(queryParams.SortBy))
+            {
+                query = queryParams.SortDesc
+                    ? query.OrderByDescending(e => EF.Property<object>(e, queryParams.SortBy))
+                    : query.OrderBy(e => EF.Property<object>(e, queryParams.SortBy));
+            }
+
+            // Apply pagination
+            var pagedComments = await query
+                .Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
+                .Take(queryParams.PageSize)
+                .Select(c => _mapper.Map<CommentDto>(c))
+                .ToListAsync();
+
+            int totalItems = await query.CountAsync();
+
+            return new PagedResult<CommentDto>
+            {
+                Items = pagedComments,
+                TotalCount = totalItems,
+                PageNumber = queryParams.PageNumber,
+                PageSize = queryParams.PageSize,
+            };
+        }
+
+        public async Task<CommentDto> CreateCommentAsync(Guid taskId, CreateCommentDto dto, Guid userId)
+        {
+            var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId) ?? throw new Exception("Task not found.");
+
+            var comment = new Comment
+            {
+                Id = Guid.NewGuid(),
+                TaskId = taskId,
+                Content = dto.Content,
+                CreatedById = userId,
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
+            _context.Comments.Add(comment);
+            await _context.SaveChangesAsync();
+
+            await _changeLogService.LogChange("Task", taskId, userId, $"Comment added: {dto.Content}");
+
+            var commentDto = _mapper.Map<CommentDto>(comment);
+            return commentDto;
+        }
     }
 }

@@ -41,6 +41,9 @@ namespace TaskFlowAPI.Models.Enum
         UpdateTaskStatus,
 
         [Description("Log Time")]
-        LogTime
+        LogTime,
+
+        [Description("Create Comment")]
+        CreateComment
     }
 }

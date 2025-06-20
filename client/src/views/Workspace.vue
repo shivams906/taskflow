@@ -37,7 +37,7 @@
             v-for="tab in [
               'Dashboard',
               'Projects',
-              'Discussions',
+              // 'Discussions',
               'Members',
               'About',
               'History',
@@ -122,13 +122,13 @@
               </div>
             </div>
           </TabPanel>
-          <TabPanel>
+          <!-- <TabPanel>
             <div class="bg-white p-6 rounded-lg shadow-sm">
               <p class="text-gray-500 italic">
                 Discussions content coming soon...
               </p>
             </div>
-          </TabPanel>
+          </TabPanel> -->
           <TabPanel>
             <MemberList
               :members="members"
@@ -246,7 +246,7 @@ const history = ref([]);
 const TABS = {
   DASHBOARD: "dashboard",
   PROJECTS: "projects",
-  DISCUSSIONS: "discussions",
+  // DISCUSSIONS: "discussions",
   MEMBERS: "members",
   ABOUT: "about",
   HISTORY: "history",

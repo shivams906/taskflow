@@ -40,7 +40,7 @@
           v-for="tab in [
             'Dashboard',
             'Tasks',
-            'Discussions',
+            // 'Discussions',
             'Members',
             'About',
             'History',
@@ -287,14 +287,13 @@
             </div>
           </div>
         </TabPanel>
-        <TabPanel>
+        <!-- <TabPanel>
           <div class="bg-white p-6 rounded-lg shadow-sm">
-            <!-- Placeholder for Discussions content -->
             <p class="text-gray-500 italic">
               Discussions content coming soon...
             </p>
           </div>
-        </TabPanel>
+        </TabPanel> -->
         <TabPanel>
           <div class="space-y-6">
             <div
@@ -427,7 +426,7 @@ const selectedUserId = ref("");
 const TABS = {
   DASHBOARD: "dashboard",
   TASKS: "tasks",
-  DISCUSSIONS: "discussions",
+  // DISCUSSIONS: "discussions",
   MEMBERS: "members",
   ABOUT: "about",
   HISTORY: "history",

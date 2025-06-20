@@ -15,5 +15,7 @@ namespace TaskFlowAPI.Interfaces
         Task<string> DeleteTaskAsync(Guid taskId, Guid userId);
         Task<string> AssignTaskAsync(Guid taskId, AssignUserToTaskDto dto, Guid userId);
         Task<string> UnassignTaskAsync(Guid taskId, Guid userId);
+        Task<PagedResult<CommentDto>> GetCommentsForTaskAsync(Guid taskId, Guid userId, QueryParams queryParams);
+        Task<CommentDto> CreateCommentAsync(Guid taskId, CreateCommentDto dto, Guid userId);
     }
 }

@@ -168,3 +168,31 @@ export const fetchTaskStatusOptionsFromApi = async () => {
     throw error;
   }
 };
+
+export const fetchCommentsByTaskFromApi = async (taskId, queryParams) => {
+  try {
+    const response = await api.get(`/api/tasks/${taskId}/comments`, {
+      headers: authHeader(),
+      params: queryParams,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to load comments", error);
+    throw error;
+  }
+};
+
+export const postCommentToApi = async (taskId, newComment) => {
+  try {
+    await api.post(
+      `/api/tasks/${taskId}/comments`,
+      {
+        content: newComment,
+      },
+      { headers: authHeader() }
+    );
+  } catch (error) {
+    console.error("Failed to post comment", error);
+    throw error;
+  }
+};

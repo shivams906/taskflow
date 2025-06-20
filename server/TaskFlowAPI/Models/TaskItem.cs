@@ -27,5 +27,6 @@ namespace TaskFlowAPI.Models
         public DateTime? UpdatedAtUtc { get; set; }
 
         public ICollection<TaskTimeLog> TimeLogs { get; set; } = [];
+        public ICollection<Comment> Comments { get; set; } = [];
     }
 }

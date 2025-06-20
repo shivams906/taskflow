@@ -94,6 +94,42 @@ namespace TaskFlowAPI.Migrations
                     b.ToTable("ChangeLogs");
                 });
 
+            modelBuilder.Entity("TaskFlowAPI.Models.Comment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("Comments");
+                });
+
             modelBuilder.Entity("TaskFlowAPI.Models.Project", b =>
                 {
                     b.Property<Guid>("Id")
@@ -402,6 +438,29 @@ namespace TaskFlowAPI.Migrations
                     b.Navigation("ChangedByUser");
                 });
 
+            modelBuilder.Entity("TaskFlowAPI.Models.Comment", b =>
+                {
+                    b.HasOne("TaskFlowAPI.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("TaskFlowAPI.Models.TaskItem", "Task")
+                        .WithMany("Comments")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TaskFlowAPI.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Task");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("TaskFlowAPI.Models.Project", b =>
                 {
                     b.HasOne("TaskFlowAPI.Models.User", "CreatedBy")
@@ -567,6 +626,8 @@ namespace TaskFlowAPI.Migrations
 
             modelBuilder.Entity("TaskFlowAPI.Models.TaskItem", b =>
                 {
+                    b.Navigation("Comments");
+
                     b.Navigation("TimeLogs");
                 });
 

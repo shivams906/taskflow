@@ -260,6 +260,39 @@ namespace TaskFlowAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Comments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TaskId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedById = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedById = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Comments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Comments_Tasks_TaskId",
+                        column: x => x.TaskId,
+                        principalTable: "Tasks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Comments_Users_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Comments_Users_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TaskTimeLogs",
                 columns: table => new
                 {
@@ -307,6 +340,21 @@ namespace TaskFlowAPI.Migrations
                 name: "IX_ChangeLogs_ChangedByUserId",
                 table: "ChangeLogs",
                 column: "ChangedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Comments_CreatedById",
+                table: "Comments",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Comments_TaskId",
+                table: "Comments",
+                column: "TaskId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Comments_UpdatedById",
+                table: "Comments",
+                column: "UpdatedById");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Projects_CreatedById",
@@ -422,6 +470,9 @@ namespace TaskFlowAPI.Migrations
 
             migrationBuilder.DropTable(
                 name: "ChangeLogs");
+
+            migrationBuilder.DropTable(
+                name: "Comments");
 
             migrationBuilder.DropTable(
                 name: "ProjectUsers");

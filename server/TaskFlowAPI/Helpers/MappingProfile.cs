@@ -34,6 +34,10 @@ namespace TaskFlow.API.Helpers
 
             CreateMap<CreateTaskDto, TaskItem>();
 
+            CreateMap<Comment, CommentDto>()
+                .ForMember(dest => dest.CreatedByUsername, opt => opt.MapFrom(src => src.CreatedBy.Username));
+            CreateMap<CreateCommentDto, Comment>();
+
             CreateMap<TaskTimeLog, TimeLogDto>()
                 .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.User.Username));
 

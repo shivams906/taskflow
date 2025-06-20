@@ -124,6 +124,26 @@ namespace TaskFlowAPI.Controllers
             return Ok("Task unassigned.");
         }
 
+        [HttpGet("{taskId}/comments")]
+        public async Task<IActionResult> GetCommentsForTask(Guid taskId, [FromQuery] QueryParams queryParams)
+        {
+            var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
+            if (!await _roleAccessService.HasPermissionAsync(userId, TaskPermission.ViewTask, taskId))
+                throw new UnauthorizedAccessException("You do not have access");
+            var comments = await _taskService.GetCommentsForTaskAsync(taskId, userId, queryParams);
+            return Ok(comments);
+        }
+
+        [HttpPost("{taskId}/comments")]
+        public async Task<IActionResult> CreateComment(Guid taskId, [FromBody] CreateCommentDto dto)
+        {
+            var userId = _currentSessionProvider.GetUserId() ?? throw new Exception("User ID not found");
+            if (!await _roleAccessService.HasPermissionAsync(userId, TaskPermission.ViewTask, taskId))
+                throw new UnauthorizedAccessException("You do not have access");
+            var comment = await _taskService.CreateCommentAsync(taskId, dto, userId);
+            return Ok(comment);
+        }
+
         [HttpGet("statuses")]
         public IActionResult GetStatuses()
         {
